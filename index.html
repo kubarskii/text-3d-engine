@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+        body {
+            background: #0a0a0f;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            font-family: 'Courier New', monospace;
+            font-size: 2px;
+            line-height: 6px;
+            letter-spacing: 2px;
+            color: #00ffcc;
+            text-shadow: 0 0 8px #00ffcc44;
+            white-space: pre;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+    </div>
+
+    <script>
+
+
+        // @ts-check
+        /**
+         * @typedef {Object} Point
+         * @property {number} x from -1 to 1
+         * @property {number} y from -1 to 1        
+         * @property {number} z from 0 to 1, if less than 0 - not visible
+        */
+
+        /**
+         * @typedef {Object} RenderResult
+         * @property {number} x from 0 to width
+         * @property {number} y from 0 to height
+        */
+
+        /**
+         * creating a point in world coordinates
+         * @param {number} x from -1 to 1
+         * @param {number} y from -1 to 1
+         * @param {number} z from 0 to 1, if less than 0 - not visible
+         * @returns {Point}
+        */
+        const point = (x, y, z) => {
+            return { x, y, z }
+        }
+
+        /**
+         * converting from world coordinates to screen coordinates ready for canvas rendering
+         * @param {RenderResult} point,
+         * @param {number} width
+         * @param {number} height
+         * @returns {RenderResult}
+        */
+        const normalize = ({ x, y }, width, height) => {
+            return {
+                x: (x + 1) / 2 * width,
+                y: (1 - (y + 1) / 2) * height,
+            }
+        }
+
+        const normalizeZ = ({ x, y, z }) => {
+            if (z <= 0) {
+                return { x: 0, y: 0 }
+            }
+            return { x: x / z, y: y / z }
+        }
+
+        const renderPoint = (point, width, height) => {
+            return normalize(normalizeZ(point), width, height)
+        }
+
+        /**
+         * Rotate around Z axis
+         * @param {Point} p
+         * @param {number} angle in radians
+         * @returns {Point}
+         */
+        const rotateZ = (p, angle) => {
+            const cos = Math.cos(angle)
+            const sin = Math.sin(angle)
+            return {
+                x: p.x * cos - p.y * sin,
+                y: p.x * sin + p.y * cos,
+                z: p.z
+            }
+        }
+
+        /**
+         * Rotate around X axis
+         * @param {Point} p
+         * @param {number} angle in radians
+         * @returns {Point}
+         */
+        const rotateX = (p, angle) => {
+            const cos = Math.cos(angle)
+            const sin = Math.sin(angle)
+            return {
+                x: p.x,
+                y: p.y * cos - p.z * sin,
+                z: p.y * sin + p.z * cos
+            }
+        }
+
+        /**
+         * Rotate around Y axis
+         * @param {Point} p
+         * @param {number} angle in radians
+         * @returns {Point}
+         */
+        const rotateY = (p, angle) => {
+            const cos = Math.cos(angle)
+            const sin = Math.sin(angle)
+            return {
+                x: p.x * cos + p.z * sin,
+                y: p.y,
+                z: -p.x * sin + p.z * cos
+            }
+        }
+
+        /**
+         * Translate point in Z (move towards/away from camera)
+         * @param {Point} p
+         * @param {number} offset
+         * @returns {Point}
+         */
+        const translateZ = (p, offset) => {
+            return { x: p.x, y: p.y, z: p.z + offset }
+        }
+
+
+        // Depth shading characters (far → close)
+        const SHADE_CHARS = ' ·∙░▒▓█'
+        const VERTEX_CHAR = '●'
+        const BG_CHAR = ' '
+
+        /**
+         * Get shading character based on depth (z value after translation)
+         * @param {number} z depth value (lower = closer)
+         * @param {number} minZ minimum expected z
+         * @param {number} maxZ maximum expected z
+         * @returns {string}
+         */
+        const getShadeChar = (z, minZ = 1.5, maxZ = 2.5) => {
+            const t = 1 - Math.max(0, Math.min(1, (z - minZ) / (maxZ - minZ)))
+            const idx = Math.floor(t * (SHADE_CHARS.length - 1))
+            return SHADE_CHARS[idx]
+        }
+
+        /**
+         * @param {HTMLElement} container
+         * @param {Object} dimensions
+         * @param {number} dimensions.width
+         * @param {number} dimensions.height
+        */
+        const clear = (container, dimensions) => {
+            container.innerHTML = ''
+            const { width, height } = dimensions
+            for (let row = 0; row <= height; row++) {
+                const fragment = document.createDocumentFragment()
+                const div = document.createElement('div')
+                let fragmentString = ''
+                for (let col = 0; col <= width; col++) {
+                    fragmentString += BG_CHAR
+                }
+                div.textContent = fragmentString
+                fragment.appendChild(div)
+                container.appendChild(fragment)
+            }
+        }
+
+        /**
+         * Plots a single pixel at screen coordinates
+         * @param {HTMLDivElement} container
+         * @param {number} ix screen x (integer)
+         * @param {number} iy screen y (integer)
+         * @param {string} char character to plot
+         */
+        const plotPixel = (container, ix, iy, char = 'o') => {
+            const row = /** @type {HTMLDivElement} */ (container.children[iy])
+            if (!row) return
+            const text = row.innerText
+            if (ix < 0 || ix >= text.length) return
+            row.innerText = text.substring(0, ix) + char + text.substring(ix + 1)
+        }
+
+        /**
+         * Render a vertex point with depth shading
+         * @param {Point} pt world-space point (after transformation)
+         * @param {HTMLDivElement} container
+         * @param {Object} dimensions
+         * @param {number} dimensions.width
+         * @param {number} dimensions.height
+         */
+        const renderPointToHtml = (pt, container, { width, height }) => {
+            const { x, y } = renderPoint(pt, width, height)
+            plotPixel(container, Math.floor(x), Math.floor(y), VERTEX_CHAR)
+        }
+
+        /**
+         * Draws a line between two points using Bresenham's algorithm with depth shading
+         * @param {Point} p1 start point in world coordinates
+         * @param {Point} p2 end point in world coordinates
+         * @param {HTMLDivElement} container
+         * @param {Object} dimensions
+         * @param {number} dimensions.width
+         * @param {number} dimensions.height
+         */
+        const renderLineToHtml = (p1, p2, container, { width, height }) => {
+            const start = renderPoint(p1, width, height)
+            const end = renderPoint(p2, width, height)
+
+            let x0 = Math.floor(start.x)
+            let y0 = Math.floor(start.y)
+            const x1 = Math.floor(end.x)
+            const y1 = Math.floor(end.y)
+
+            const dx = Math.abs(x1 - x0)
+            const dy = Math.abs(y1 - y0)
+            const sx = x0 < x1 ? 1 : -1
+            const sy = y0 < y1 ? 1 : -1
+            let err = dx - dy
+
+            const totalSteps = Math.max(dx, dy)
+            let step = 0
+
+            while (true) {
+                // Interpolate Z for depth shading
+                const t = totalSteps > 0 ? step / totalSteps : 0
+                const z = p1.z + t * (p2.z - p1.z)
+                const char = getShadeChar(z)
+
+                plotPixel(container, x0, y0, char)
+
+                if (x0 === x1 && y0 === y1) break
+
+                const e2 = 2 * err
+                if (e2 > -dy) {
+                    err -= dy
+                    x0 += sx
+                }
+                if (e2 < dx) {
+                    err += dx
+                    y0 += sy
+                }
+                step++
+            }
+        }
+
+        const container = /** @type {HTMLDivElement} */ (document.querySelector('.container'))
+        const dimensions = { width: 128, height: 64 }
+
+        /**
+         * @typedef {Object} Line
+         * @property {Point} start
+         * @property {Point} end
+         */
+
+        /**
+         * @param {HTMLDivElement} container
+         * @param {Object} dimensions
+         * @param {Point[]} points
+         * @param {Line[]} lines
+         */
+        const renderFrame = (container, dimensions, points, lines = []) => {
+            clear(container, dimensions)
+            for (let line of lines) {
+                renderLineToHtml(line.start, line.end, container, dimensions)
+            }
+            // for (let pt of points) {
+            // renderPointToHtml(pt, container, dimensions)
+            // }
+        }
+
+        // ============ ROTATING CUBE ============
+
+        // Cube vertices (centered at origin, size 0.5)
+        const size = 0.5
+        const cubeVertices = [
+            point(-size, -size, -size), // 0: back-bottom-left
+            point(size, -size, -size), // 1: back-bottom-right
+            point(size, size, -size), // 2: back-top-right
+            point(-size, size, -size), // 3: back-top-left
+            point(-size, -size, size), // 4: front-bottom-left
+            point(size, -size, size), // 5: front-bottom-right
+            point(size, size, size), // 6: front-top-right
+            point(-size, size, size), // 7: front-top-left
+        ]
+
+        // Cube edges (indices into vertices array)
+        const cubeEdges = [
+            [0, 1], [1, 2], [2, 3], [3, 0], // back face
+            [4, 5], [5, 6], [6, 7], [7, 4], // front face
+            [0, 4], [1, 5], [2, 6], [3, 7], // connecting edges
+        ]
+
+        let angleX = 0
+        let angleY = 0
+        let angleZ = 0
+
+        const renderCube = () => {
+            // Transform all vertices
+            const transformed = cubeVertices.map(v => {
+                let p = v
+                p = rotateX(p, angleX)
+                p = rotateY(p, angleY)
+                p = rotateZ(p, angleZ)
+                p = translateZ(p, 2) // Push cube away from camera
+                return p
+            })
+
+            // Build lines from edges
+            const lines = cubeEdges.map(([i, j]) => ({
+                start: transformed[i],
+                end: transformed[j]
+            }))
+
+            // Render
+            renderFrame(container, dimensions, transformed, lines)
+
+            // Update rotation angles
+            angleX += 0.02
+            angleY += 0.03
+            angleZ += 0.01
+
+            requestAnimationFrame(renderCube)
+        }
+
+        renderCube()
+
+
+    </script>
+
+
+</body>
+
+</html>
