@@ -11,22 +11,12 @@
             background: #0a0a0f;
             margin: 0;
             padding: 20px;
-        }
-
-        .container {
-            font-family: 'Courier New', monospace;
-            font-size: 2px;
-            line-height: 6px;
-            letter-spacing: 2px;
-            color: #00ffcc;
-            text-shadow: 0 0 8px #00ffcc44;
-            white-space: pre;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
         }
 
         .controls {
-            position: fixed;
-            top: 20px;
-            right: 20px;
             background: rgba(0, 20, 20, 0.9);
             border: 1px solid #00ffcc44;
             border-radius: 8px;
@@ -35,6 +25,21 @@
             font-family: 'Courier New', monospace;
             font-size: 12px;
             box-shadow: 0 0 20px #00ffcc22;
+            height: fit-content;
+            flex-shrink: 0;
+        }
+
+        .container {
+            font-family: 'Courier New', monospace;
+            font-size: 4px;
+            line-height: 5px;
+            letter-spacing: 1px;
+            color: #00ffcc;
+            text-shadow: 0 0 4px #00ffcc44;
+            white-space: pre;
+            flex: 1;
+            min-width: 0;
+            overflow: auto;
         }
 
         .controls h3 {
@@ -92,6 +97,71 @@
             font-family: inherit;
             font-size: 11px;
             transition: all 0.2s;
+        }
+
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+                padding: 10px;
+                gap: 10px;
+            }
+
+            .controls {
+                width: 100%;
+                box-sizing: border-box;
+                padding: 12px;
+            }
+
+            .controls h3 {
+                font-size: 16px;
+                text-align: center;
+            }
+
+            .model-select {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 4px;
+            }
+
+            .model-select button {
+                padding: 8px 12px;
+                font-size: 12px;
+                margin: 0;
+            }
+
+            .upload-btn {
+                display: block;
+                text-align: center;
+                padding: 12px 16px;
+            }
+
+            .container {
+                width: 100%;
+                overflow: auto;
+                font-size: 3px;
+                line-height: 4px;
+                letter-spacing: 0.5px;
+            }
+
+            .model-info {
+                font-size: 10px;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                font-size: 2.5px;
+                line-height: 3.5px;
+                letter-spacing: 0.3px;
+            }
+
+            .model-select button {
+                padding: 6px 8px;
+                font-size: 10px;
+            }
         }
 
         .model-select button:hover,
@@ -385,10 +455,32 @@
         }
 
         const container = /** @type {HTMLDivElement} */ (document.querySelector('.container'))
-        const dimensions = { width: 128, height: 64 }
+
+        // Responsive dimensions based on screen size
+        const getResponsiveDimensions = () => {
+            const screenWidth = window.innerWidth
+            if (screenWidth <= 480) {
+                return { width: 140, height: 100 }
+            } else if (screenWidth <= 768) {
+                return { width: 180, height: 120 }
+            } else {
+                return { width: 220, height: 140 }
+            }
+        }
+
+        let dimensions = getResponsiveDimensions()
 
         // Create reusable buffer
-        const frameBuffer = createBuffer(dimensions.width, dimensions.height)
+        let frameBuffer = createBuffer(dimensions.width, dimensions.height)
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            const newDimensions = getResponsiveDimensions()
+            if (newDimensions.width !== dimensions.width || newDimensions.height !== dimensions.height) {
+                dimensions = newDimensions
+                frameBuffer = createBuffer(dimensions.width, dimensions.height)
+            }
+        })
 
         /**
          * @typedef {Object} Line
