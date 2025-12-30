@@ -1,0 +1,24 @@
+{
+  "name": "text-3d-engine",
+  "version": "1.0.0",
+  "description": "Tiny voxel-style ASCII 3D text renderer with a dead-simple API.",
+  "type": "module",
+  "main": "index.js",
+  "exports": "./index.js",
+  "keywords": [
+    "3d",
+    "text",
+    "renderer",
+    "ascii",
+    "voxel"
+  ],
+  "files": [
+    "index.js",
+    "engine.js",
+    "models.js",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "echo \"No tests specified\""
+  }
+}

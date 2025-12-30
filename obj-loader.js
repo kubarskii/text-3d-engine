@@ -114,7 +114,7 @@ export const centerAndScale = (vertices, targetHeight) => {
         throw new Error(`Invalid targetHeight: ${targetHeight}. Must be greater than 0`)
     }
     const bbox = calculateBoundingBox(vertices)
-    
+
     // If height is zero, use max dimension instead
     let scale
     if (bbox.height === 0) {
