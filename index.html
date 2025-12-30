@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>⬡ 3D Model Viewer</title>
 
     <style>
         body {
@@ -169,6 +169,164 @@
             background: #00ffcc33;
             border-color: #00ffcc;
         }
+
+        .game-links {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #00ffcc33;
+        }
+
+        .game-links a {
+            display: block;
+            color: #ff0080;
+            text-decoration: none;
+            font-size: 12px;
+            transition: all 0.2s;
+            margin: 6px 0;
+        }
+
+        .game-links a:hover {
+            text-shadow: 0 0 8px #ff008066;
+        }
+
+        .game-links a.shooter {
+            color: #ff3300;
+        }
+
+        .game-links a.shooter:hover {
+            text-shadow: 0 0 8px #ff330066;
+        }
+
+        .render-controls {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #00ffcc33;
+        }
+
+        .render-controls h4 {
+            margin: 0 0 8px 0;
+            font-size: 12px;
+            color: #00ffcc;
+        }
+
+        .control-group {
+            margin-bottom: 10px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 10px;
+            color: #00ffcc99;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            margin: 4px 0;
+            background: transparent;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-runnable-track {
+            height: 4px;
+            background: #00ffcc33;
+            border-radius: 2px;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #00ffcc;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 4px #00ffcc66;
+        }
+
+        .control-group input[type="range"]::-moz-range-track {
+            height: 4px;
+            background: #00ffcc33;
+            border-radius: 2px;
+        }
+
+        .control-group input[type="range"]::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            background: #00ffcc;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 4px #00ffcc66;
+        }
+
+        .control-group input[type="range"]:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .control-group input[type="range"]:disabled::-webkit-slider-thumb {
+            background: #00ffcc66;
+            cursor: not-allowed;
+        }
+
+        .control-group input[type="range"]:disabled::-moz-range-thumb {
+            background: #00ffcc66;
+            cursor: not-allowed;
+        }
+
+        .control-group input[type="checkbox"] {
+            margin-right: 6px;
+            cursor: pointer;
+        }
+
+        .control-group small {
+            display: block;
+            margin-top: 2px;
+        }
+
+        .control-value {
+            display: inline-block;
+            margin-left: 6px;
+            font-size: 10px;
+            color: #00ffcc;
+            min-width: 40px;
+        }
+
+        .obj-controls {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #00ffcc33;
+            display: none;
+        }
+
+        .obj-controls.active {
+            display: block;
+        }
+
+        .obj-controls button {
+            background: transparent;
+            border: 1px solid #00ffcc;
+            color: #00ffcc;
+            padding: 6px 12px;
+            margin-top: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 11px;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        .obj-controls button:hover {
+            background: #00ffcc22;
+            box-shadow: 0 0 12px #00ffcc44;
+        }
+
+        .obj-controls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 
@@ -187,6 +345,8 @@
             <button data-model="icosahedron">5: Icosa</button>
             <button data-model="sphere">6: Sphere</button>
             <button data-model="torus" class="active">7: Torus</button>
+            <button data-model="text3d">8: 3D</button>
+            <button data-model="hello">9: HELLO</button>
         </div>
         <div class="model-info" id="modelInfo">
             Vertices: 0 | Edges: 0
@@ -194,265 +354,89 @@
         <div class="model-info" id="fpsDisplay" style="color: #ffcc00;">
             0 FPS
         </div>
+        <div class="obj-controls" id="objControls">
+            <h4>📦 OBJ Model Settings</h4>
+            <div class="control-group">
+                <label>
+                    Target Height:
+                    <span class="control-value" id="objHeightValue">1.0</span>
+                </label>
+                <input type="range" id="objHeightSlider" min="0.1" max="3" step="0.1" value="1.0">
+            </div>
+            <div class="control-group">
+                <label>
+                    <input type="checkbox" id="objCenter" checked>
+                    Center Model
+                </label>
+            </div>
+            <div class="control-group">
+                <label>
+                    Max Edges (Simplify):
+                    <span class="control-value" id="objMaxEdgesValue">All</span>
+                </label>
+                <input type="range" id="objMaxEdgesSlider" min="0" max="5000" step="100" value="0">
+                <small style="color: #00ffcc66; font-size: 9px;">0 = All edges (disabled)</small>
+            </div>
+            <div class="control-group">
+                <label>
+                    Simplify Factor:
+                    <span class="control-value" id="objSimplifyValue">1</span>
+                </label>
+                <input type="range" id="objSimplifySlider" min="1" max="20" step="1" value="1">
+                <small style="color: #00ffcc66; font-size: 9px;">Keep every Nth edge (1 = no simplification)</small>
+            </div>
+            <button id="reprocessOBJ">🔄 Reprocess OBJ</button>
+        </div>
+        <div class="render-controls">
+            <h4>⚙️ Render Settings</h4>
+            <div class="control-group">
+                <label>
+                    Detail Level (LOD):
+                    <span class="control-value" id="lodValue">500</span>
+                </label>
+                <input type="range" id="lodSlider" min="50" max="2000" step="50" value="500">
+            </div>
+            <div class="control-group">
+                <label>
+                    <input type="checkbox" id="showVertices" checked>
+                    Show Vertices
+                </label>
+            </div>
+            <div class="control-group">
+                <label>
+                    Rotation Speed:
+                    <span class="control-value" id="rotSpeedValue">1.0x</span>
+                </label>
+                <input type="range" id="rotSpeedSlider" min="0" max="3" step="0.1" value="1.0">
+            </div>
+            <div class="control-group">
+                <label>
+                    Scale:
+                    <span class="control-value" id="scaleValue">1.0</span>
+                </label>
+                <input type="range" id="scaleSlider" min="0.1" max="2" step="0.1" value="1.0">
+            </div>
+            <div class="control-group">
+                <label>
+                    Depth Shading:
+                    <span class="control-value" id="shadingValue">On</span>
+                </label>
+                <input type="checkbox" id="depthShading" checked>
+            </div>
+        </div>
+        <div class="game-links">
+            🎮 <a href="game.html">Play VOID RUNNER →</a><br>
+            ☠ <a href="shooter.html" class="shooter">Play HELL CORRIDOR →</a>
+        </div>
     </div>
 
     <div class="container">
     </div>
 
-    <script>
-
-
-        // @ts-check
-        /**
-         * @typedef {Object} Point
-         * @property {number} x from -1 to 1
-         * @property {number} y from -1 to 1        
-         * @property {number} z from 0 to 1, if less than 0 - not visible
-        */
-
-        /**
-         * @typedef {Object} RenderResult
-         * @property {number} x from 0 to width
-         * @property {number} y from 0 to height
-        */
-
-        /**
-         * creating a point in world coordinates
-         * @param {number} x from -1 to 1
-         * @param {number} y from -1 to 1
-         * @param {number} z from 0 to 1, if less than 0 - not visible
-         * @returns {Point}
-        */
-        const point = (x, y, z) => {
-            return { x, y, z }
-        }
-
-        /**
-         * converting from world coordinates to screen coordinates ready for canvas rendering
-         * @param {RenderResult} point,
-         * @param {number} width
-         * @param {number} height
-         * @returns {RenderResult}
-        */
-        const normalize = ({ x, y }, width, height) => {
-            return {
-                x: (x + 1) / 2 * width,
-                y: (1 - (y + 1) / 2) * height,
-            }
-        }
-
-        const normalizeZ = ({ x, y, z }) => {
-            if (z <= 0) {
-                return { x: 0, y: 0 }
-            }
-            return { x: x / z, y: y / z }
-        }
-
-        const renderPoint = (point, width, height) => {
-            return normalize(normalizeZ(point), width, height)
-        }
-
-        /**
-         * Rotate around Z axis
-         * @param {Point} p
-         * @param {number} angle in radians
-         * @returns {Point}
-         */
-        const rotateZ = (p, angle) => {
-            const cos = Math.cos(angle)
-            const sin = Math.sin(angle)
-            return {
-                x: p.x * cos - p.y * sin,
-                y: p.x * sin + p.y * cos,
-                z: p.z
-            }
-        }
-
-        /**
-         * Rotate around X axis
-         * @param {Point} p
-         * @param {number} angle in radians
-         * @returns {Point}
-         */
-        const rotateX = (p, angle) => {
-            const cos = Math.cos(angle)
-            const sin = Math.sin(angle)
-            return {
-                x: p.x,
-                y: p.y * cos - p.z * sin,
-                z: p.y * sin + p.z * cos
-            }
-        }
-
-        /**
-         * Rotate around Y axis
-         * @param {Point} p
-         * @param {number} angle in radians
-         * @returns {Point}
-         */
-        const rotateY = (p, angle) => {
-            const cos = Math.cos(angle)
-            const sin = Math.sin(angle)
-            return {
-                x: p.x * cos + p.z * sin,
-                y: p.y,
-                z: -p.x * sin + p.z * cos
-            }
-        }
-
-        /**
-         * Translate point in Z (move towards/away from camera)
-         * @param {Point} p
-         * @param {number} offset
-         * @returns {Point}
-         */
-        const translateZ = (p, offset) => {
-            return { x: p.x, y: p.y, z: p.z + offset }
-        }
-
-
-        // Depth shading characters (far → close)
-        const SHADE_CHARS = ' ·∙░▒▓█'
-        const VERTEX_CHAR = '●'
-        const BG_CHAR = ' '
-
-        /**
-         * Get shading character based on depth (z value after translation)
-         * @param {number} z depth value (lower = closer)
-         * @param {number} minZ minimum expected z
-         * @param {number} maxZ maximum expected z
-         * @returns {string}
-         */
-        const getShadeChar = (z, minZ = 1.5, maxZ = 2.5) => {
-            const t = 1 - Math.max(0, Math.min(1, (z - minZ) / (maxZ - minZ)))
-            const idx = Math.floor(t * (SHADE_CHARS.length - 1))
-            return SHADE_CHARS[idx]
-        }
-
-        // ============ OPTIMIZED BUFFER RENDERER ============
-
-        /**
-         * @typedef {Object} FrameBuffer
-         * @property {string[][]} chars - 2D character buffer
-         * @property {number[][]} depth - Z-buffer for depth testing
-         * @property {number} width
-         * @property {number} height
-         */
-
-        /**
-         * Create a new frame buffer
-         * @param {number} width
-         * @param {number} height
-         * @returns {FrameBuffer}
-         */
-        const createBuffer = (width, height) => {
-            /** @type {string[][]} */
-            const chars = []
-            /** @type {number[][]} */
-            const depth = []
-            for (let y = 0; y <= height; y++) {
-                chars[y] = []
-                depth[y] = []
-                for (let x = 0; x <= width; x++) {
-                    chars[y][x] = BG_CHAR
-                    depth[y][x] = Infinity
-                }
-            }
-            return { chars, depth, width, height }
-        }
-
-        /**
-         * Clear the buffer
-         * @param {FrameBuffer} buffer
-         */
-        const clearBuffer = (buffer) => {
-            for (let y = 0; y <= buffer.height; y++) {
-                for (let x = 0; x <= buffer.width; x++) {
-                    buffer.chars[y][x] = BG_CHAR
-                    buffer.depth[y][x] = Infinity
-                }
-            }
-        }
-
-        /**
-         * Plot pixel to buffer with depth testing
-         * @param {FrameBuffer} buffer
-         * @param {number} x
-         * @param {number} y
-         * @param {number} z
-         * @param {string} char
-         */
-        const plotToBuffer = (buffer, x, y, z, char) => {
-            if (x < 0 || x > buffer.width || y < 0 || y > buffer.height) return
-            if (z < buffer.depth[y][x]) {
-                buffer.depth[y][x] = z
-                buffer.chars[y][x] = char
-            }
-        }
-
-        /**
-         * Render buffer to DOM (single update)
-         * @param {FrameBuffer} buffer
-         * @param {HTMLElement} container
-         */
-        const flushBuffer = (buffer, container) => {
-            const lines = []
-            for (let y = 0; y <= buffer.height; y++) {
-                lines.push(buffer.chars[y].join(''))
-            }
-            container.textContent = lines.join('\n')
-        }
-
-        /**
-         * Draw line to buffer using Bresenham with depth
-         * @param {FrameBuffer} buffer
-         * @param {Point} p1
-         * @param {Point} p2
-         * @param {number} width
-         * @param {number} height
-         */
-        const drawLineToBuffer = (buffer, p1, p2, width, height) => {
-            const start = renderPoint(p1, width, height)
-            const end = renderPoint(p2, width, height)
-
-            let x0 = Math.floor(start.x)
-            let y0 = Math.floor(start.y)
-            const x1 = Math.floor(end.x)
-            const y1 = Math.floor(end.y)
-
-            // Skip tiny edges (optimization)
-            const dx = Math.abs(x1 - x0)
-            const dy = Math.abs(y1 - y0)
-            if (dx < 2 && dy < 2) return
-
-            const sx = x0 < x1 ? 1 : -1
-            const sy = y0 < y1 ? 1 : -1
-            let err = dx - dy
-
-            const totalSteps = Math.max(dx, dy)
-            let step = 0
-
-            while (true) {
-                const t = totalSteps > 0 ? step / totalSteps : 0
-                const z = p1.z + t * (p2.z - p1.z)
-                const char = getShadeChar(z)
-
-                plotToBuffer(buffer, x0, y0, z, char)
-
-                if (x0 === x1 && y0 === y1) break
-
-                const e2 = 2 * err
-                if (e2 > -dy) {
-                    err -= dy
-                    x0 += sx
-                }
-                if (e2 < dx) {
-                    err += dx
-                    y0 += sy
-                }
-                step++
-            }
-        }
+    <script type="module">
+        import * as Engine from './engine.js'
+        import * as Models from './models.js'
+        import * as OBJLoader from './obj-loader.js'
 
         const container = /** @type {HTMLDivElement} */ (document.querySelector('.container'))
 
@@ -471,339 +455,51 @@
         let dimensions = getResponsiveDimensions()
 
         // Create reusable buffer
-        let frameBuffer = createBuffer(dimensions.width, dimensions.height)
+        let frameBuffer = Engine.createBuffer(dimensions.width, dimensions.height)
 
         // Handle resize
         window.addEventListener('resize', () => {
             const newDimensions = getResponsiveDimensions()
             if (newDimensions.width !== dimensions.width || newDimensions.height !== dimensions.height) {
                 dimensions = newDimensions
-                frameBuffer = createBuffer(dimensions.width, dimensions.height)
+                frameBuffer = Engine.createBuffer(dimensions.width, dimensions.height)
             }
         })
 
-        /**
-         * @typedef {Object} Line
-         * @property {Point} start
-         * @property {Point} end
-         */
-
-        /**
-         * Optimized frame renderer using buffer
-         * @param {HTMLDivElement} container
-         * @param {Object} dimensions
-         * @param {Point[]} points
-         * @param {Line[]} lines
-         * @param {number} [maxEdges] - Max edges to render (for LOD)
-         */
-        const renderFrame = (container, dimensions, points, lines = [], maxEdges = Infinity) => {
-            clearBuffer(frameBuffer)
-
-            // Edge decimation for complex models
-            const step = lines.length > maxEdges ? Math.ceil(lines.length / maxEdges) : 1
-
-            for (let i = 0; i < lines.length; i += step) {
-                const line = lines[i]
-                drawLineToBuffer(frameBuffer, line.start, line.end, dimensions.width, dimensions.height)
-            }
-
-            // Render vertices on top
-            for (const pt of points) {
-                const { x, y } = renderPoint(pt, dimensions.width, dimensions.height)
-                plotToBuffer(frameBuffer, Math.floor(x), Math.floor(y), pt.z - 0.001, VERTEX_CHAR)
-            }
-
-            flushBuffer(frameBuffer, container)
+        // Render settings
+        let renderSettings = {
+            maxEdges: 500,
+            showVertices: true,
+            rotationSpeed: 1.0,
+            scale: 1.0,
+            depthShading: true
         }
 
-        // ============ 3D MODEL SYSTEM ============
-
-        /**
-         * @typedef {Object} Model3D
-         * @property {Point[]} vertices - Array of 3D points
-         * @property {number[][]} edges - Array of [i, j] vertex index pairs
-         * @property {number[][]} [faces] - Optional: Array of vertex indices forming faces
-         */
-
-        /**
-         * Create a cube model
-         * @param {number} size - Half-size of the cube
-         * @returns {Model3D}
-         */
-        const createCube = (size = 0.5) => ({
-            vertices: [
-                point(-size, -size, -size),
-                point(size, -size, -size),
-                point(size, size, -size),
-                point(-size, size, -size),
-                point(-size, -size, size),
-                point(size, -size, size),
-                point(size, size, size),
-                point(-size, size, size),
-            ],
-            edges: [
-                [0, 1], [1, 2], [2, 3], [3, 0],
-                [4, 5], [5, 6], [6, 7], [7, 4],
-                [0, 4], [1, 5], [2, 6], [3, 7],
-            ]
-        })
-
-        /**
-         * Create a pyramid model
-         * @param {number} size - Base size
-         * @param {number} height - Height of pyramid
-         * @returns {Model3D}
-         */
-        const createPyramid = (size = 0.5, height = 0.7) => ({
-            vertices: [
-                point(-size, -height / 2, -size), // base corners
-                point(size, -height / 2, -size),
-                point(size, -height / 2, size),
-                point(-size, -height / 2, size),
-                point(0, height / 2, 0), // apex
-            ],
-            edges: [
-                [0, 1], [1, 2], [2, 3], [3, 0], // base
-                [0, 4], [1, 4], [2, 4], [3, 4], // sides
-            ]
-        })
-
-        /**
-         * Create a tetrahedron model
-         * @param {number} size
-         * @returns {Model3D}
-         */
-        const createTetrahedron = (size = 0.5) => {
-            const h = size * Math.sqrt(2 / 3)
-            const r = size / Math.sqrt(3)
-            return {
-                vertices: [
-                    point(0, h, 0),
-                    point(-size / 2, -h / 2, r),
-                    point(size / 2, -h / 2, r),
-                    point(0, -h / 2, -r * 2),
-                ],
-                edges: [
-                    [0, 1], [0, 2], [0, 3],
-                    [1, 2], [2, 3], [3, 1],
-                ]
-            }
-        }
-
-        /**
-         * Create an octahedron model
-         * @param {number} size
-         * @returns {Model3D}
-         */
-        const createOctahedron = (size = 0.5) => ({
-            vertices: [
-                point(0, size, 0),
-                point(0, -size, 0),
-                point(size, 0, 0),
-                point(-size, 0, 0),
-                point(0, 0, size),
-                point(0, 0, -size),
-            ],
-            edges: [
-                [0, 2], [0, 3], [0, 4], [0, 5],
-                [1, 2], [1, 3], [1, 4], [1, 5],
-                [2, 4], [4, 3], [3, 5], [5, 2],
-            ]
-        })
-
-        /**
-         * Create an icosahedron model
-         * @param {number} size
-         * @returns {Model3D}
-         */
-        const createIcosahedron = (size = 0.5) => {
-            const phi = (1 + Math.sqrt(5)) / 2
-            const a = size
-            const b = size / phi
-            return {
-                vertices: [
-                    point(0, b, -a), point(b, a, 0), point(-b, a, 0),
-                    point(0, b, a), point(0, -b, a), point(-a, 0, b),
-                    point(0, -b, -a), point(a, 0, -b), point(a, 0, b),
-                    point(-a, 0, -b), point(b, -a, 0), point(-b, -a, 0),
-                ],
-                edges: [
-                    [0, 1], [0, 2], [0, 6], [0, 7], [0, 9],
-                    [1, 2], [1, 3], [1, 7], [1, 8],
-                    [2, 3], [2, 5], [2, 9],
-                    [3, 4], [3, 5], [3, 8],
-                    [4, 5], [4, 8], [4, 10], [4, 11],
-                    [5, 9], [5, 11],
-                    [6, 7], [6, 9], [6, 10], [6, 11],
-                    [7, 8], [7, 10],
-                    [8, 10],
-                    [9, 11],
-                    [10, 11],
-                ]
-            }
-        }
-
-        /**
-         * Create a sphere (icosphere) model
-         * @param {number} radius
-         * @param {number} segments - Latitude segments
-         * @param {number} rings - Longitude rings
-         * @returns {Model3D}
-         */
-        const createSphere = (radius = 0.5, segments = 12, rings = 8) => {
-            const vertices = []
-            const edges = []
-
-            for (let ring = 0; ring <= rings; ring++) {
-                const phi = (ring / rings) * Math.PI
-                for (let seg = 0; seg < segments; seg++) {
-                    const theta = (seg / segments) * Math.PI * 2
-                    vertices.push(point(
-                        radius * Math.sin(phi) * Math.cos(theta),
-                        radius * Math.cos(phi),
-                        radius * Math.sin(phi) * Math.sin(theta)
-                    ))
-                }
-            }
-
-            for (let ring = 0; ring < rings; ring++) {
-                for (let seg = 0; seg < segments; seg++) {
-                    const curr = ring * segments + seg
-                    const next = ring * segments + (seg + 1) % segments
-                    const below = (ring + 1) * segments + seg
-                    edges.push([curr, next])
-                    edges.push([curr, below])
-                }
-            }
-
-            return { vertices, edges }
-        }
-
-        /**
-         * Create a torus model
-         * @param {number} majorRadius - Distance from center to tube center
-         * @param {number} minorRadius - Tube radius
-         * @param {number} majorSegments
-         * @param {number} minorSegments
-         * @returns {Model3D}
-         */
-        const createTorus = (majorRadius = 0.4, minorRadius = 0.15, majorSegments = 16, minorSegments = 8) => {
-            const vertices = []
-            const edges = []
-
-            for (let i = 0; i < majorSegments; i++) {
-                const theta = (i / majorSegments) * Math.PI * 2
-                for (let j = 0; j < minorSegments; j++) {
-                    const phi = (j / minorSegments) * Math.PI * 2
-                    const x = (majorRadius + minorRadius * Math.cos(phi)) * Math.cos(theta)
-                    const y = minorRadius * Math.sin(phi)
-                    const z = (majorRadius + minorRadius * Math.cos(phi)) * Math.sin(theta)
-                    vertices.push(point(x, y, z))
-                }
-            }
-
-            for (let i = 0; i < majorSegments; i++) {
-                for (let j = 0; j < minorSegments; j++) {
-                    const curr = i * minorSegments + j
-                    const nextMinor = i * minorSegments + (j + 1) % minorSegments
-                    const nextMajor = ((i + 1) % majorSegments) * minorSegments + j
-                    edges.push([curr, nextMinor])
-                    edges.push([curr, nextMajor])
-                }
-            }
-
-            return { vertices, edges }
-        }
-
-        /**
-         * Parse simple OBJ format string
-         * @param {string} objString
-         * @returns {Model3D}
-         */
-        const parseOBJ = (objString) => {
-            const vertices = []
-            const edges = []
-            const edgeSet = new Set()
-
-            const lines = objString.trim().split('\n')
-            for (const line of lines) {
-                const parts = line.trim().split(/\s+/)
-                if (parts[0] === 'v') {
-                    vertices.push(point(
-                        parseFloat(parts[1]),
-                        parseFloat(parts[2]),
-                        parseFloat(parts[3])
-                    ))
-                } else if (parts[0] === 'f') {
-                    const indices = parts.slice(1).map(p => parseInt(p.split('/')[0]) - 1)
-                    for (let i = 0; i < indices.length; i++) {
-                        const a = indices[i]
-                        const b = indices[(i + 1) % indices.length]
-                        const key = a < b ? `${a}-${b}` : `${b}-${a}`
-                        if (!edgeSet.has(key)) {
-                            edgeSet.add(key)
-                            edges.push([a, b])
-                        }
-                    }
-                }
-            }
-
-            return { vertices, edges }
-        }
-
-        /**
-         * Transform a model with rotation and translation
-         * @param {Model3D} model
-         * @param {Object} transform
-         * @param {number} transform.rx - Rotation around X
-         * @param {number} transform.ry - Rotation around Y
-         * @param {number} transform.rz - Rotation around Z
-         * @param {number} transform.tz - Translation in Z
-         * @param {number} [transform.scale] - Scale factor
-         * @returns {Point[]}
-         */
-        const transformModel = (model, { rx = 0, ry = 0, rz = 0, tz = 2, scale = 1 }) => {
-            return model.vertices.map(v => {
-                let p = point(v.x * scale, v.y * scale, v.z * scale)
-                p = rotateX(p, rx)
-                p = rotateY(p, ry)
-                p = rotateZ(p, rz)
-                p = translateZ(p, tz)
-                return p
-            })
-        }
-
-        /**
-         * Render a 3D model
-         * @param {Model3D} model
-         * @param {Point[]} transformedVertices
-         * @param {HTMLDivElement} container
-         * @param {Object} dimensions
-         * @param {number} [maxEdges] - Max edges to render (LOD)
-         */
-        const renderModel = (model, transformedVertices, container, dimensions, maxEdges = Infinity) => {
-            const lines = model.edges.map(([i, j]) => ({
-                start: transformedVertices[i],
-                end: transformedVertices[j]
-            }))
-            renderFrame(container, dimensions, transformedVertices, lines, maxEdges)
-        }
-
-        // ============ DEMO: ROTATING MODELS ============
-
-        // Available models
+        // Available models - now from models.js
         const models = {
-            cube: createCube(0.5),
-            pyramid: createPyramid(0.5, 0.7),
-            tetrahedron: createTetrahedron(0.6),
-            octahedron: createOctahedron(0.5),
-            icosahedron: createIcosahedron(0.5),
-            sphere: createSphere(0.5, 16, 10),
-            torus: createTorus(0.35, 0.15, 20, 10),
+            cube: Models.createCube(0.5),
+            pyramid: Models.createPyramid(0.5, 0.7),
+            tetrahedron: Models.createTetrahedron(0.6),
+            octahedron: Models.createOctahedron(0.5),
+            icosahedron: Models.createIcosahedron(0.5),
+            sphere: Models.createSphere(0.5, 16, 10),
+            torus: Models.createTorus(0.35, 0.15, 20, 10),
+            text3d: Models.createText3D(0.6),
+            hello: Models.createTextHello(0.25),
         }
 
-        // Current model (change this to render different shapes)
+        // Current model
         let currentModel = models.torus
+
+        // OBJ model state
+        let rawOBJContent = null
+        let rawOBJFileName = null
+        let objProcessingSettings = {
+            targetHeight: 1.0,
+            center: true,
+            maxEdges: null,
+            simplifyFactor: 1
+        }
 
         let angleX = 0
         let angleY = 0
@@ -813,9 +509,6 @@
         let lastTime = performance.now()
         let frameCount = 0
         let fps = 0
-
-        // LOD settings
-        const MAX_EDGES_FOR_60FPS = 500
 
         const animate = () => {
             // FPS calculation
@@ -828,24 +521,34 @@
                 updateFPS(fps)
             }
 
-            const transformed = transformModel(currentModel, {
+            Engine.clearBuffer(frameBuffer)
+
+            const transformed = Engine.transformModel(currentModel, {
                 rx: angleX,
                 ry: angleY,
                 rz: angleZ,
                 tz: 2,
-                scale: 1
+                scale: renderSettings.scale
             })
 
-            // Auto LOD based on edge count
-            const maxEdges = currentModel.edges.length > MAX_EDGES_FOR_60FPS
-                ? MAX_EDGES_FOR_60FPS
+            // Apply render settings
+            const maxEdges = currentModel.edges.length > renderSettings.maxEdges
+                ? renderSettings.maxEdges
                 : Infinity
 
-            renderModel(currentModel, transformed, container, dimensions, maxEdges)
+            const lineChar = renderSettings.depthShading ? undefined : '·'
 
-            angleX += 0.02
-            angleY += 0.03
-            angleZ += 0.01
+            Engine.renderModel(frameBuffer, currentModel, transformed, container, dimensions, {
+                maxEdges,
+                showVertices: renderSettings.showVertices,
+                lineChar
+            })
+            Engine.flushBuffer(frameBuffer, container)
+
+            const rotSpeed = renderSettings.rotationSpeed
+            angleX += 0.02 * rotSpeed
+            angleY += 0.03 * rotSpeed
+            angleZ += 0.01 * rotSpeed
 
             requestAnimationFrame(animate)
         }
@@ -861,12 +564,50 @@
             const info = document.getElementById('modelInfo')
             if (info) {
                 const nameStr = name ? `${name} | ` : ''
-                const lodInfo = model.edges.length > MAX_EDGES_FOR_60FPS
-                    ? ` | LOD: ${MAX_EDGES_FOR_60FPS}/${model.edges.length}`
+                const lodInfo = model.edges.length > renderSettings.maxEdges
+                    ? ` | LOD: ${renderSettings.maxEdges}/${model.edges.length}`
                     : ''
                 info.textContent = `${nameStr}Verts: ${model.vertices.length} | Edges: ${model.edges.length}${lodInfo}`
             }
         }
+
+        // Render controls handlers
+        const lodSlider = /** @type {HTMLInputElement} */ (document.getElementById('lodSlider'))
+        const lodValue = document.getElementById('lodValue')
+        lodSlider.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value)
+            renderSettings.maxEdges = value
+            lodValue.textContent = value.toString()
+            updateModelInfo(currentModel)
+        })
+
+        const showVerticesCheck = /** @type {HTMLInputElement} */ (document.getElementById('showVertices'))
+        showVerticesCheck.addEventListener('change', (e) => {
+            renderSettings.showVertices = e.target.checked
+        })
+
+        const rotSpeedSlider = /** @type {HTMLInputElement} */ (document.getElementById('rotSpeedSlider'))
+        const rotSpeedValue = document.getElementById('rotSpeedValue')
+        rotSpeedSlider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value)
+            renderSettings.rotationSpeed = value
+            rotSpeedValue.textContent = `${value.toFixed(1)}x`
+        })
+
+        const scaleSlider = /** @type {HTMLInputElement} */ (document.getElementById('scaleSlider'))
+        const scaleValue = document.getElementById('scaleValue')
+        scaleSlider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value)
+            renderSettings.scale = value
+            scaleValue.textContent = value.toFixed(1)
+        })
+
+        const depthShadingCheck = /** @type {HTMLInputElement} */ (document.getElementById('depthShading'))
+        const shadingValue = document.getElementById('shadingValue')
+        depthShadingCheck.addEventListener('change', (e) => {
+            renderSettings.depthShading = e.target.checked
+            shadingValue.textContent = e.target.checked ? 'On' : 'Off'
+        })
 
         // Update active button state
         const updateActiveButton = (modelName) => {
@@ -882,12 +623,20 @@
                 currentModel = models[modelName]
                 updateModelInfo(currentModel, modelName)
                 updateActiveButton(modelName)
+
+                // Hide OBJ controls if switching to a built-in model
+                const objControls = document.getElementById('objControls')
+                if (objControls && modelName !== 'custom') {
+                    objControls.classList.remove('active')
+                } else if (objControls && modelName === 'custom' && rawOBJContent) {
+                    objControls.classList.add('active')
+                }
             }
         }
 
         // Keyboard controls to switch models
         document.addEventListener('keydown', (e) => {
-            const modelKeys = { '1': 'cube', '2': 'pyramid', '3': 'tetrahedron', '4': 'octahedron', '5': 'icosahedron', '6': 'sphere', '7': 'torus' }
+            const modelKeys = { '1': 'cube', '2': 'pyramid', '3': 'tetrahedron', '4': 'octahedron', '5': 'icosahedron', '6': 'sphere', '7': 'torus', '8': 'text3d', '9': 'hello' }
             if (modelKeys[e.key]) {
                 switchModel(modelKeys[e.key])
             }
@@ -902,6 +651,76 @@
             })
         })
 
+        // Process OBJ model with current settings
+        const processOBJModel = (content, fileName) => {
+            try {
+                const parsed = Engine.parseOBJ(content)
+
+                // Validate parsed model
+                if (!parsed.vertices || parsed.vertices.length === 0) {
+                    throw new Error('OBJ file has no valid vertices')
+                }
+                if (!parsed.edges || parsed.edges.length === 0) {
+                    console.warn('OBJ file has no edges - model may not render correctly')
+                }
+
+                // Use OBJLoader utilities for better processing
+                let processedVertices = parsed.vertices
+                if (objProcessingSettings.center) {
+                    processedVertices = OBJLoader.centerAndScale(processedVertices, objProcessingSettings.targetHeight)
+                } else {
+                    processedVertices = OBJLoader.scaleToHeight(processedVertices, objProcessingSettings.targetHeight)
+                }
+
+                // Validate and filter edges to ensure all indices are valid
+                const maxVertexIndex = processedVertices.length - 1
+                let processedEdges = parsed.edges.filter(([a, b]) => {
+                    return typeof a === 'number' && typeof b === 'number' &&
+                        a >= 0 && b >= 0 &&
+                        a <= maxVertexIndex && b <= maxVertexIndex &&
+                        a !== b
+                })
+
+                // Simplify edges - maxEdges takes priority over simplifyFactor
+                if (objProcessingSettings.maxEdges !== null && objProcessingSettings.maxEdges > 0) {
+                    const simplified = OBJLoader.simplifyToMaxEdges(
+                        { vertices: processedVertices, edges: processedEdges },
+                        objProcessingSettings.maxEdges
+                    )
+                    processedEdges = simplified.edges
+                } else if (objProcessingSettings.simplifyFactor > 1) {
+                    const simplified = OBJLoader.simplifyModel(
+                        { vertices: processedVertices, edges: processedEdges },
+                        objProcessingSettings.simplifyFactor
+                    )
+                    processedEdges = simplified.edges
+                }
+
+                // Final validation pass
+                processedEdges = processedEdges.filter(([a, b]) => {
+                    return typeof a === 'number' && typeof b === 'number' &&
+                        a >= 0 && b >= 0 &&
+                        a < processedVertices.length && b < processedVertices.length &&
+                        a !== b
+                })
+
+                const model = {
+                    vertices: processedVertices,
+                    edges: processedEdges
+                }
+
+                console.log(`Processed OBJ: ${model.vertices.length} vertices, ${model.edges.length} edges`)
+
+                currentModel = model
+                models['custom'] = model
+                updateModelInfo(model, fileName)
+                updateActiveButton('')
+            } catch (err) {
+                console.error('Failed to process OBJ:', err)
+                alert(`Failed to process OBJ file: ${err.message}`)
+            }
+        }
+
         // File upload handler
         const fileInput = /** @type {HTMLInputElement} */ (document.getElementById('objFile'))
         fileInput.addEventListener('change', (e) => {
@@ -913,57 +732,86 @@
                 const content = /** @type {string} */ (event.target?.result)
                 if (!content) return
 
-                try {
-                    const model = parseOBJ(content)
+                rawOBJContent = content
+                rawOBJFileName = file.name
 
-                    // Normalize model to fit in view
-                    const bounds = model.vertices.reduce((acc, v) => ({
-                        minX: Math.min(acc.minX, v.x),
-                        maxX: Math.max(acc.maxX, v.x),
-                        minY: Math.min(acc.minY, v.y),
-                        maxY: Math.max(acc.maxY, v.y),
-                        minZ: Math.min(acc.minZ, v.z),
-                        maxZ: Math.max(acc.maxZ, v.z),
-                    }), { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity, minZ: Infinity, maxZ: -Infinity })
-
-                    const centerX = (bounds.minX + bounds.maxX) / 2
-                    const centerY = (bounds.minY + bounds.maxY) / 2
-                    const centerZ = (bounds.minZ + bounds.maxZ) / 2
-                    const maxDim = Math.max(
-                        bounds.maxX - bounds.minX,
-                        bounds.maxY - bounds.minY,
-                        bounds.maxZ - bounds.minZ
-                    )
-                    const scale = 1 / maxDim
-
-                    // Center and scale vertices
-                    model.vertices = model.vertices.map(v => point(
-                        (v.x - centerX) * scale,
-                        (v.y - centerY) * scale,
-                        (v.z - centerZ) * scale
-                    ))
-
-                    currentModel = model
-                    models['custom'] = model
-                    updateModelInfo(model, file.name)
-                    updateActiveButton('')
-                } catch (err) {
-                    console.error('Failed to parse OBJ:', err)
-                    alert('Failed to parse OBJ file')
+                // Show OBJ controls
+                const objControls = document.getElementById('objControls')
+                if (objControls) {
+                    objControls.classList.add('active')
                 }
+
+                // Process with default settings
+                processOBJModel(content, file.name)
             }
             reader.readAsText(file)
+        })
+
+        // OBJ processing controls
+        const objHeightSlider = /** @type {HTMLInputElement} */ (document.getElementById('objHeightSlider'))
+        const objHeightValue = document.getElementById('objHeightValue')
+        objHeightSlider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value)
+            objProcessingSettings.targetHeight = value
+            objHeightValue.textContent = value.toFixed(1)
+        })
+
+        const objCenterCheck = /** @type {HTMLInputElement} */ (document.getElementById('objCenter'))
+        objCenterCheck.addEventListener('change', (e) => {
+            objProcessingSettings.center = e.target.checked
+        })
+
+        const objMaxEdgesSlider = /** @type {HTMLInputElement} */ (document.getElementById('objMaxEdgesSlider'))
+        const objMaxEdgesValue = document.getElementById('objMaxEdgesValue')
+        objMaxEdgesSlider.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value)
+            if (value === 0) {
+                objProcessingSettings.maxEdges = null
+                objMaxEdgesValue.textContent = 'All'
+                // Enable simplify factor when maxEdges is disabled
+                objSimplifySlider.disabled = false
+            } else {
+                objProcessingSettings.maxEdges = value
+                objMaxEdgesValue.textContent = value.toString()
+                // Disable simplify factor when maxEdges is active
+                objSimplifySlider.disabled = true
+            }
+        })
+
+        const objSimplifySlider = /** @type {HTMLInputElement} */ (document.getElementById('objSimplifySlider'))
+        const objSimplifyValue = document.getElementById('objSimplifyValue')
+        objSimplifySlider.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value)
+            objProcessingSettings.simplifyFactor = value
+            objSimplifyValue.textContent = value.toString()
+            // If simplify factor is set to > 1, disable maxEdges and reset it
+            if (value > 1) {
+                objMaxEdgesSlider.disabled = true
+                objProcessingSettings.maxEdges = null
+                objMaxEdgesValue.textContent = 'All'
+                objMaxEdgesSlider.value = '0'
+            } else {
+                // When simplifyFactor is 1, enable maxEdges
+                objMaxEdgesSlider.disabled = false
+            }
+        })
+
+        // Initialize control states
+        objSimplifySlider.disabled = false
+        objMaxEdgesSlider.disabled = false
+
+        const reprocessOBJBtn = document.getElementById('reprocessOBJ')
+        reprocessOBJBtn.addEventListener('click', () => {
+            if (rawOBJContent) {
+                processOBJModel(rawOBJContent, rawOBJFileName || 'model.obj')
+            }
         })
 
         // Initialize info
         updateModelInfo(currentModel, 'torus')
 
         animate()
-
-
     </script>
-
-
 </body>
 
 </html>

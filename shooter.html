@@ -1,0 +1,1604 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>☠ HELL CORRIDOR</title>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=VT323&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: #0a0000;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse at 50% 100%, rgba(255, 50, 0, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 30% 30%, rgba(255, 100, 0, 0.05) 0%, transparent 40%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 1000px;
+            padding: 0 20px;
+            font-family: 'Bebas Neue', sans-serif;
+        }
+
+        .hud-left,
+        .hud-right {
+            display: flex;
+            gap: 30px;
+        }
+
+        .hud-item {
+            text-align: center;
+        }
+
+        .hud-label {
+            font-size: 14px;
+            color: #666;
+            letter-spacing: 2px;
+        }
+
+        .hud-value {
+            font-size: 36px;
+            letter-spacing: 2px;
+        }
+
+        .hud-value.health {
+            color: #ff3333;
+            text-shadow: 0 0 20px #ff000066;
+        }
+
+        .hud-value.ammo {
+            color: #ffaa00;
+            text-shadow: 0 0 20px #ffaa0066;
+        }
+
+        .hud-value.score {
+            color: #00ff88;
+            text-shadow: 0 0 20px #00ff8866;
+        }
+
+        .hud-value.wave {
+            color: #ff00ff;
+            text-shadow: 0 0 20px #ff00ff66;
+        }
+
+        .hud-value.kills {
+            color: #00ffff;
+            text-shadow: 0 0 20px #00ffff66;
+        }
+
+        .game-container {
+            position: relative;
+            border: 3px solid #ff330066;
+            background: #0a0000;
+            box-shadow: 0 0 60px #ff000022;
+            overflow: hidden;
+        }
+
+        .render-area {
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 6px;
+            line-height: 7px;
+            letter-spacing: 1px;
+            color: #ff6600;
+            text-shadow: 0 0 3px #ff330044;
+            white-space: pre;
+            padding: 0;
+        }
+
+        /* Crosshair overlay */
+        .crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            font-size: 24px;
+            color: #ff0000;
+            text-shadow: 0 0 10px #ff0000;
+            opacity: 0.8;
+        }
+
+        /* Damage flash */
+        .damage-flash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at center, transparent 30%, rgba(255, 0, 0, 0.4) 100%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.1s;
+        }
+
+        .damage-flash.active {
+            opacity: 1;
+        }
+
+        /* Muzzle flash overlay */
+        .muzzle-flash {
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 48px;
+            color: #ffff00;
+            text-shadow: 0 0 30px #ff6600, 0 0 60px #ff0000;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .muzzle-flash.active {
+            opacity: 1;
+        }
+
+        /* Overlays */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(10, 0, 0, 0.95);
+            z-index: 20;
+            transition: opacity 0.3s;
+        }
+
+        .overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .overlay-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 72px;
+            color: #ff3300;
+            text-shadow:
+                0 0 30px #ff0000,
+                0 0 60px #ff000066,
+                0 4px 0 #880000;
+            letter-spacing: 8px;
+            margin-bottom: 10px;
+        }
+
+        .overlay-subtitle {
+            font-family: 'VT323', monospace;
+            font-size: 24px;
+            color: #ff6600;
+            margin-bottom: 40px;
+        }
+
+        .start-btn {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px;
+            padding: 16px 60px;
+            background: linear-gradient(180deg, #ff3300 0%, #aa0000 100%);
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            letter-spacing: 4px;
+            transition: all 0.2s;
+            text-shadow: 0 2px 0 #660000;
+            box-shadow: 0 4px 0 #660000, 0 0 30px #ff000044;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #660000, 0 0 50px #ff000066;
+        }
+
+        .start-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #660000, 0 0 20px #ff000044;
+        }
+
+        .instructions {
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            color: #666;
+            margin-top: 40px;
+            text-align: center;
+            line-height: 2;
+        }
+
+        .instructions kbd {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #220000;
+            border: 1px solid #ff330044;
+            color: #ff6600;
+            margin: 0 4px;
+        }
+
+        /* Stamina bar */
+        .stamina-bar-container {
+            position: absolute;
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #333;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .stamina-bar-container.visible {
+            opacity: 1;
+        }
+
+        .stamina-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #00aaff, #00ffff);
+            box-shadow: 0 0 10px #00aaff;
+            transition: width 0.1s;
+        }
+
+        /* Pointer lock hint */
+        .pointer-lock-hint {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'VT323', monospace;
+            font-size: 14px;
+            color: #666;
+            pointer-events: none;
+        }
+
+        .game-over-stats {
+            font-family: 'VT323', monospace;
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .game-over-stats div {
+            font-size: 24px;
+            color: #ff6600;
+            margin: 10px 0;
+        }
+
+        .game-over-stats .final-score {
+            font-size: 48px;
+            color: #00ff88;
+            text-shadow: 0 0 30px #00ff8866;
+        }
+
+        .wave-announce {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 48px;
+            color: #ff00ff;
+            text-shadow: 0 0 30px #ff00ff;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            letter-spacing: 6px;
+        }
+
+        .wave-announce.active {
+            opacity: 1;
+        }
+
+        /* Mobile controls */
+        .mobile-controls {
+            display: none;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 900px) {
+            .mobile-controls {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .render-area {
+                font-size: 4px;
+                line-height: 5px;
+            }
+
+            .overlay-title {
+                font-size: 48px;
+            }
+
+            .hud-value {
+                font-size: 24px;
+            }
+        }
+
+        .mobile-btn {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 50, 0, 0.2);
+            border: 2px solid #ff330066;
+            border-radius: 12px;
+            color: #ff6600;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .mobile-btn:active {
+            background: rgba(255, 50, 0, 0.5);
+        }
+
+        .mobile-btn.fire {
+            width: 100px;
+            background: rgba(255, 0, 0, 0.3);
+            border-color: #ff0000;
+            color: #ff0000;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-wrapper">
+        <div class="hud">
+            <div class="hud-left">
+                <div class="hud-item">
+                    <div class="hud-label">HEALTH</div>
+                    <div class="hud-value health" id="health">100</div>
+                </div>
+                <div class="hud-item">
+                    <div class="hud-label">AMMO</div>
+                    <div class="hud-value ammo" id="ammo">50</div>
+                </div>
+            </div>
+            <div class="hud-right">
+                <div class="hud-item">
+                    <div class="hud-label">KILLS</div>
+                    <div class="hud-value kills" id="kills">0</div>
+                </div>
+                <div class="hud-item">
+                    <div class="hud-label">WAVE</div>
+                    <div class="hud-value wave" id="wave">1</div>
+                </div>
+                <div class="hud-item">
+                    <div class="hud-label">SCORE</div>
+                    <div class="hud-value score" id="score">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-container">
+            <div class="render-area" id="renderArea"></div>
+            <div class="crosshair">+</div>
+            <div class="damage-flash" id="damageFlash"></div>
+            <div class="muzzle-flash" id="muzzleFlash">✦</div>
+            <div class="wave-announce" id="waveAnnounce">WAVE 1</div>
+            <div class="stamina-bar-container" id="staminaContainer">
+                <div class="stamina-bar" id="staminaBar"></div>
+            </div>
+            <div class="pointer-lock-hint" id="pointerHint">Click to enable mouse look</div>
+
+            <div class="overlay" id="startOverlay">
+                <div class="overlay-title">HELL CORRIDOR</div>
+                <div class="overlay-subtitle">They're coming. All of them.</div>
+                <button class="start-btn" id="startBtn">LOCK & LOAD</button>
+                <div class="instructions">
+                    <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move<br>
+                    <kbd>MOUSE</kbd> Look Around<br>
+                    <kbd>CLICK</kbd> Fire • <kbd>SPACE</kbd> Jump • <kbd>SHIFT</kbd> Sprint<br>
+                    Survive the endless hordes!
+                </div>
+            </div>
+
+            <div class="overlay hidden" id="gameOverOverlay">
+                <div class="overlay-title">YOU DIED</div>
+                <div class="game-over-stats">
+                    <div>Kills: <span id="finalKills">0</span></div>
+                    <div>Waves Survived: <span id="finalWaves">0</span></div>
+                    <div class="final-score">SCORE: <span id="finalScore">0</span></div>
+                </div>
+                <button class="start-btn" id="restartBtn">TRY AGAIN</button>
+            </div>
+        </div>
+
+        <div class="mobile-controls">
+            <button class="mobile-btn" id="btnLeft">◀</button>
+            <button class="mobile-btn fire" id="btnFire">FIRE</button>
+            <button class="mobile-btn" id="btnRight">▶</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as Engine from './engine.js'
+        import * as Models from './models.js'
+        import * as OBJLoader from './obj-loader.js'
+
+        // ============ GAME CONFIGURATION ============
+        /** @type {Readonly<typeof CONFIG>} Immutable game configuration */
+        const CONFIG = Object.freeze({
+            // Display
+            width: 200,
+            height: 100,
+
+            // Movement
+            playerSpeed: 0.04,
+            strafeSpeed: 0.035,
+            backwardSpeedMultiplier: 0.7,
+            sprintMultiplier: 1.8,
+            mouseSensitivity: 0.003,
+            pitchLimit: 1.2,              // ~70 degrees up/down
+
+            // Jumping & Physics
+            jumpForce: 0.12,
+            gravity: 0.006,
+            groundY: 0,
+
+            // Stamina
+            maxStamina: 100,
+            staminaDrain: 0.8,
+            staminaRegen: 0.4,
+            staminaJumpCost: 20,
+
+            // Combat
+            bulletSpeed: 0.3,
+            bulletDamage: 25,
+            bulletSpread: 0.03,
+            bulletSpawnDistance: 0.2,
+            maxBullets: 20,
+            fireRate: 8,
+            muzzleFlashDuration: 4,
+
+            // Enemy settings
+            enemyBaseSpeed: 0.008,
+            enemySpawnZ: 15,
+            enemySpawnVariance: 3,
+            enemyAttackRange: 2.5,
+            enemyDamage: 10,
+            enemyAttackCooldown: 60,
+            enemyHitFlashDuration: 5,
+
+            // Wave settings
+            baseEnemiesPerWave: 5,
+            enemiesPerWaveIncrease: 3,
+            waveCooldown: 180,
+            waveAnnounceDuration: 90,
+            initialSpawnDelay: 30,
+
+            // Pickups
+            healthPackHeal: 25,
+            ammoPackAmount: 15,
+            pickupSpawnChance: 0.2,
+            pickupCollectRange: 1.0,
+            pickupDespawnRange: 20,
+
+            // Arena bounds
+            arenaBoundsX: 3,
+            arenaBoundsZ: 2,
+
+            // Rendering
+            minRenderDistance: 0.5,
+            maxBulletDistance: 20,        // enemySpawnZ + 5
+
+            // Initial values
+            initialHealth: 100,
+            initialAmmo: 50,
+            waveAmmoBonus: 10,
+            waveAmmoBonusPerWave: 2,
+
+            // Damage flash
+            damageFlashDuration: 10,
+        })
+
+        /**
+         * Enemy type definitions with base stats
+         * @typedef {Object} EnemyType
+         * @property {string} model - Model identifier
+         * @property {number} health - Base health points
+         * @property {number} speed - Speed multiplier
+         * @property {number} score - Points awarded on kill
+         * @property {number} scale - Visual scale multiplier
+         * @property {string} char - ASCII character for rendering
+         * @property {boolean} [flying] - Whether enemy floats
+         */
+        /** @type {Readonly<Record<string, EnemyType>>} */
+        const ENEMY_TYPES = Object.freeze({
+            demon: Object.freeze({ model: 'demon', health: 50, speed: 1, score: 100, scale: 1, char: '◆' }),
+            skeleton: Object.freeze({ model: 'skeleton', health: 30, speed: 1.3, score: 75, scale: 0.9, char: '☠' }),
+            bull: Object.freeze({ model: 'bull', health: 100, speed: 1.5, score: 200, scale: 1.2, char: '◈' }),
+            spider: Object.freeze({ model: 'spider', health: 40, speed: 1.4, score: 120, scale: 0.8, char: '✧' }),
+            flyer: Object.freeze({ model: 'flyer', health: 35, speed: 0.8, score: 150, scale: 0.7, char: '◇', flying: true }),
+        })
+
+        // ============ GAME STATE ============
+        const state = {
+            running: false,
+            gameOver: false,
+
+            // Player position & movement
+            health: 100,
+            ammo: 50,
+            playerX: 0,
+            playerZ: 0,           // Forward/backward position
+            playerY: 0,           // Vertical position (jumping)
+            playerVelY: 0,        // Vertical velocity
+            playerYaw: 0,         // Look direction (horizontal mouse)
+            playerPitch: 0,       // Look direction (vertical mouse, for visual only)
+            isGrounded: true,
+
+            // Stamina
+            stamina: 100,
+            isSprinting: false,
+
+            // Score
+            score: 0,
+            kills: 0,
+
+            // Wave system
+            wave: 1,
+            enemiesRemaining: 0,
+            enemiesSpawned: 0,
+            enemiesToSpawn: 0,
+            spawnCooldown: 0,
+            waveCooldown: 0,
+            waveAnnounceTimer: 0,
+
+            // Entities
+            enemies: [],
+            bullets: [],
+            pickups: [],
+            explosions: [],
+
+            // Input
+            keys: {
+                forward: false,
+                backward: false,
+                left: false,
+                right: false,
+                fire: false,
+                jump: false,
+                sprint: false
+            },
+            fireCooldown: 0,
+
+            // Mouse
+            mouseMovementX: 0,
+            mouseMovementY: 0,
+            pointerLocked: false,
+
+            // Effects
+            damageFlashTimer: 0,
+            muzzleFlashTimer: 0,
+            headBob: 0,
+
+            frameCount: 0,
+        }
+
+        // ============ MODELS ============
+
+        /** @type {Object|null} OBJ-based enemy model (loaded async) */
+        let objEnemyModel = null
+
+        /** @type {'loading'|'loaded'|'failed'} OBJ model loading state */
+        let objModelState = 'loading'
+
+        /**
+         * Loads the OBJ enemy model asynchronously
+         * Falls back to procedural models on failure
+         */
+        const loadEnemyModel = async () => {
+            try {
+                objEnemyModel = await OBJLoader.loadAndProcessOBJ('Base Mesh sculpt 2.obj', {
+                    targetHeight: 0.5,
+                    maxEdges: 300,
+                    center: true
+                })
+                objModelState = 'loaded'
+                console.log(`[Models] Loaded OBJ: ${objEnemyModel.vertices.length} vertices, ${objEnemyModel.edges.length} edges`)
+            } catch (error) {
+                objModelState = 'failed'
+                console.warn('[Models] OBJ load failed, using procedural fallback:', error.message)
+            }
+        }
+
+        // Start loading immediately
+        loadEnemyModel()
+
+        /** Procedural enemy models (fallback and non-humanoid types) */
+        const proceduralEnemyModels = Object.freeze({
+            demon: Models.createDemon(0.3),
+            skeleton: Models.createSkeleton(0.25),
+            bull: Models.createBull(0.4),
+            spider: Models.createSpider(0.3),
+            flyer: Models.createFlyer(0.3),
+        })
+
+        /** Types that use the OBJ model when available */
+        const OBJ_MODEL_TYPES = new Set(['demon', 'bull', 'skeleton'])
+
+        /**
+         * Gets the appropriate model for an enemy type
+         * Uses OBJ model for humanoid types when loaded, procedural otherwise
+         * @param {string} type - Enemy type identifier
+         * @returns {Object} Model with vertices and edges
+         */
+        const getEnemyModel = (type) => {
+            if (objEnemyModel && OBJ_MODEL_TYPES.has(type)) {
+                return objEnemyModel
+            }
+            return proceduralEnemyModels[type] ?? proceduralEnemyModels.demon
+        }
+
+        /** Static game models */
+        const bulletModel = Object.freeze(Models.createBullet(0.05))
+        const explosionModel = Object.freeze(Models.createExplosion(0.3))
+        const healthPackModel = Object.freeze(Models.createHealthPack(0.15))
+        const ammoPackModel = Object.freeze(Models.createAmmoPack(0.12))
+        const gunModel = Object.freeze(Models.createGun(0.25))
+
+        // ============ DOM ELEMENTS ============
+        const renderArea = document.getElementById('renderArea')
+        const gameContainer = document.querySelector('.game-container')
+        const healthEl = document.getElementById('health')
+        const ammoEl = document.getElementById('ammo')
+        const scoreEl = document.getElementById('score')
+        const waveEl = document.getElementById('wave')
+        const killsEl = document.getElementById('kills')
+        const damageFlash = document.getElementById('damageFlash')
+        const muzzleFlash = document.getElementById('muzzleFlash')
+        const waveAnnounce = document.getElementById('waveAnnounce')
+        const staminaContainer = document.getElementById('staminaContainer')
+        const staminaBar = document.getElementById('staminaBar')
+        const pointerHint = document.getElementById('pointerHint')
+        const startOverlay = document.getElementById('startOverlay')
+        const gameOverOverlay = document.getElementById('gameOverOverlay')
+        const finalKillsEl = document.getElementById('finalKills')
+        const finalWavesEl = document.getElementById('finalWaves')
+        const finalScoreEl = document.getElementById('finalScore')
+
+        // ============ RENDERING ============
+        const dimensions = Object.freeze({ width: CONFIG.width, height: CONFIG.height })
+        let buffer = Engine.createBuffer(dimensions.width, dimensions.height)
+
+        // Environment constants (ASCII only for monospace consistency)
+        // High-contrast character set for better visibility
+        const GROUND_CHARS = '-~=#@'
+        const SKY_CHAR = '-'
+        const PITCH_TO_HORIZON_SCALE = 40
+        const CHECKERBOARD_PERIOD = 6
+        const HEAD_BOB_AMPLITUDE = 0.02
+
+        /**
+         * Renders the environment (sky and ground) into empty buffer cells
+         * Uses consistent gradients and checkerboard pattern for visual texture
+         */
+        const renderEnvironment = () => {
+            const { height, width } = dimensions
+            const baseHorizon = height * 0.5
+            const pitchOffset = state.playerPitch * PITCH_TO_HORIZON_SCALE
+            const horizon = Math.floor(baseHorizon + pitchOffset)
+            const clampedHorizon = Engine.clamp(horizon, 0, height)
+            const groundCharCount = GROUND_CHARS.length - 1
+
+            for (let y = 0; y <= height; y++) {
+                const row = buffer.chars[y]
+                const isSky = y < clampedHorizon
+
+                for (let x = 0; x <= width; x++) {
+                    // Skip non-empty cells (objects render on top)
+                    if (row[x] !== ' ') continue
+
+                    if (isSky) {
+                        row[x] = SKY_CHAR
+                    } else {
+                        // Ground gradient based on distance from horizon
+                        const t = Engine.clamp((y - baseHorizon) / baseHorizon, 0, 1)
+                        const baseIdx = Math.floor(t * groundCharCount)
+                        const pattern = ((x + y) % CHECKERBOARD_PERIOD === 0) ? 1 : 0
+                        row[x] = GROUND_CHARS[Math.min(baseIdx + pattern, groundCharCount)]
+                    }
+                }
+            }
+        }
+
+        // Reusable object for worldToView to avoid GC pressure in hot path
+        const _viewResult = { x: 0, y: 0, z: 0 }
+
+        /**
+         * Transforms world coordinates to view space relative to player
+         * @param {number} wx - World X position
+         * @param {number} wy - World Y position
+         * @param {number} wz - World Z position
+         * @returns {{x: number, y: number, z: number}} View-space coordinates
+         */
+        const worldToView = (wx, wy, wz) => {
+            // Translate relative to player
+            const dx = wx - state.playerX
+            const dy = wy - state.playerY
+            const dz = wz - state.playerZ
+
+            // Rotate by yaw (Y-axis: looking left/right)
+            const cosYaw = Math.cos(state.playerYaw)
+            const sinYaw = Math.sin(state.playerYaw)
+            const x1 = dx * cosYaw - dz * sinYaw
+            const z1 = dx * sinYaw + dz * cosYaw
+
+            // Rotate by pitch (X-axis: looking up/down)
+            const cosPitch = Math.cos(state.playerPitch)
+            const sinPitch = Math.sin(state.playerPitch)
+            const y2 = dy * cosPitch - z1 * sinPitch
+            const z2 = dy * sinPitch + z1 * cosPitch
+
+            // Apply head bob and return reused object
+            _viewResult.x = x1
+            _viewResult.y = y2 + Math.sin(state.headBob) * HEAD_BOB_AMPLITUDE
+            _viewResult.z = z2
+            return _viewResult
+        }
+
+        /**
+         * Renders an enemy entity to the buffer
+         * @param {{type: string, x: number, y: number, z: number, hitFlash: number, id: number}} enemy
+         */
+        const renderEnemy = (enemy) => {
+            const view = worldToView(enemy.x, enemy.y, enemy.z)
+
+            // Early return if behind camera
+            if (view.z < CONFIG.minRenderDistance) return
+
+            const type = ENEMY_TYPES[enemy.type]
+            const model = getEnemyModel(enemy.type)
+            const { frameCount } = state
+
+            // Animation calculations
+            const isFlying = type.flying
+            const bobY = isFlying
+                ? Math.sin(frameCount * 0.1 + enemy.id) * 0.1
+                : Math.abs(Math.sin(frameCount * 0.15 + enemy.id)) * 0.05
+            const hitScale = enemy.hitFlash > 0 ? 1.1 : 1.0
+
+            const transformed = Engine.transformModel(model, {
+                rx: isFlying ? Math.sin(frameCount * 0.05) * 0.2 : 0,
+                ry: frameCount * 0.05 + enemy.id,
+                rz: 0,
+                tx: view.x,
+                ty: view.y + bobY,
+                tz: view.z,
+                scale: type.scale * hitScale
+            })
+
+            Engine.renderModel(buffer, model, transformed, renderArea, dimensions, {
+                showVertices: true,
+                vertexChar: type.char,
+                lineChar: enemy.hitFlash > 0 ? '█' : '▓'
+            })
+        }
+
+        /**
+         * Renders a bullet projectile
+         * @param {{x: number, y: number, z: number, vx: number, vy: number, vz: number}} bullet
+         */
+        const renderBullet = (bullet) => {
+            const view = worldToView(bullet.x, bullet.y, bullet.z)
+            if (view.z < CONFIG.minRenderDistance) return
+
+            const transformed = Engine.transformModel(bulletModel, {
+                rx: 0, ry: 0, rz: 0,
+                tx: view.x, ty: view.y, tz: view.z,
+                scale: 1
+            })
+
+            Engine.renderModel(buffer, bulletModel, transformed, renderArea, dimensions, {
+                showVertices: true, vertexChar: '●', lineChar: '─'
+            })
+        }
+
+        /**
+         * Renders an explosion effect
+         * @param {{x: number, y: number, z: number, rx: number, ry: number, life: number, maxLife: number}} explosion
+         */
+        const renderExplosion = (explosion) => {
+            const view = worldToView(explosion.x, explosion.y, explosion.z)
+            if (view.z < CONFIG.minRenderDistance) return
+
+            const progress = explosion.life / explosion.maxLife
+
+            const transformed = Engine.transformModel(explosionModel, {
+                rx: explosion.rx, ry: explosion.ry, rz: 0,
+                tx: view.x, ty: view.y, tz: view.z,
+                scale: 0.5 + progress * 1.5
+            })
+
+            Engine.renderModel(buffer, explosionModel, transformed, renderArea, dimensions, {
+                showVertices: true, vertexChar: '✦', lineChar: '░'
+            })
+        }
+
+        /**
+         * Renders a pickup item (health or ammo)
+         * @param {{type: 'health'|'ammo', x: number, y: number, z: number}} pickup
+         */
+        const renderPickup = (pickup) => {
+            const view = worldToView(pickup.x, pickup.y, pickup.z)
+            if (view.z < CONFIG.minRenderDistance) return
+
+            const isHealth = pickup.type === 'health'
+            const model = isHealth ? healthPackModel : ammoPackModel
+            const bobOffset = Math.sin(state.frameCount * 0.1 + pickup.x * 10) * 0.05
+
+            const transformed = Engine.transformModel(model, {
+                rx: 0, ry: state.frameCount * 0.05, rz: 0,
+                tx: view.x, ty: view.y + bobOffset, tz: view.z,
+                scale: 1
+            })
+
+            Engine.renderModel(buffer, model, transformed, renderArea, dimensions, {
+                showVertices: true, vertexChar: isHealth ? '♥' : '▪', lineChar: '─'
+            })
+        }
+
+        const renderGun = () => {
+            // Gun position (lower right of screen, slight sway)
+            const sway = Math.sin(state.frameCount * 0.08) * 0.02
+            const recoil = state.muzzleFlashTimer > 0 ? 0.05 : 0
+
+            // Head bob effect
+            const bobX = Math.sin(state.headBob) * 0.015
+            const bobY = Math.abs(Math.cos(state.headBob)) * 0.01
+
+            // Jump effect (gun moves up when falling)
+            const jumpOffset = state.isGrounded ? 0 : -state.playerVelY * 0.3
+
+            // Pitch affects gun angle and position
+            const pitchAngle = state.playerPitch * 0.5
+            const pitchOffset = state.playerPitch * 0.15
+
+            const transformed = Engine.transformModel(gunModel, {
+                rx: -0.3 + recoil + pitchAngle,
+                ry: 0.1 + sway,
+                rz: 0,
+                tx: 0.25 + bobX,
+                ty: -0.2 - recoil + bobY + jumpOffset - pitchOffset,
+                tz: 0.8,
+                scale: 1.5
+            })
+
+            Engine.renderModel(buffer, gunModel, transformed, renderArea, dimensions, {
+                showVertices: true,
+                vertexChar: '█',
+                lineChar: '▓'
+            })
+        }
+
+        const renderGame = () => {
+            Engine.clearBuffer(buffer)
+
+            // Render objects FIRST (so they reserve their pixels)
+            // Then environment fills remaining empty cells
+
+            // Render pickups (far away, render first for depth ordering)
+            for (const pickup of state.pickups) {
+                renderPickup(pickup)
+            }
+
+            // Render enemies (sorted by Z for proper depth - far to near)
+            const sortedEnemies = [...state.enemies].sort((a, b) => b.z - a.z)
+            for (const enemy of sortedEnemies) {
+                renderEnemy(enemy)
+            }
+
+            // Render bullets
+            for (const bullet of state.bullets) {
+                renderBullet(bullet)
+            }
+
+            // Render explosions
+            for (const explosion of state.explosions) {
+                renderExplosion(explosion)
+            }
+
+            // Fill environment AFTER objects (fills empty cells only)
+            renderEnvironment()
+
+            // Render gun (always on top, last)
+            renderGun()
+
+            Engine.flushBuffer(buffer, renderArea)
+        }
+
+        // ============ GAME LOGIC ============
+
+        /**
+         * Spawns a new enemy based on current wave
+         * Enemy types are progressively unlocked as waves increase
+         */
+        const spawnEnemy = () => {
+            // Progressive enemy type unlocks
+            const availableTypes = ['demon', 'skeleton']
+            if (state.wave >= 2) availableTypes.push('spider')
+            if (state.wave >= 3) availableTypes.push('flyer')
+            if (state.wave >= 4) availableTypes.push('bull')
+
+            const type = availableTypes[Math.floor(Math.random() * availableTypes.length)]
+            const typeData = ENEMY_TYPES[type]
+
+            // Spawn in a circle around player
+            const angle = Math.random() * Math.PI * 2
+            const distance = CONFIG.enemySpawnZ + Math.random() * CONFIG.enemySpawnVariance
+            const { playerX, playerZ, frameCount, wave } = state
+
+            state.enemies.push({
+                id: frameCount + Math.random(),
+                type,
+                x: playerX + Math.sin(angle) * distance * 0.3,
+                y: typeData.flying ? 0.3 + Math.random() * 0.3 : -0.3,
+                z: playerZ + Math.cos(angle) * distance,
+                health: typeData.health * (1 + wave * 0.1),
+                hitFlash: 0,
+                attackCooldown: 0,
+            })
+
+            state.enemiesSpawned++
+        }
+
+        const spawnPickup = (x, z) => {
+            if (Math.random() > CONFIG.pickupSpawnChance) return
+
+            const type = Math.random() > 0.5 ? 'health' : 'ammo'
+            state.pickups.push({
+                type,
+                x,
+                y: -0.3,
+                z,
+            })
+        }
+
+        /**
+         * Fires a bullet in the direction the player is facing
+         * Respects ammo, fire rate cooldown, and max bullet limits
+         */
+        const fireBullet = () => {
+            // Check firing conditions
+            if (state.ammo <= 0 || state.fireCooldown > 0) return
+            if (state.bullets.length >= CONFIG.maxBullets) return
+
+            // Consume resources and set cooldowns
+            state.ammo--
+            state.fireCooldown = CONFIG.fireRate
+            state.muzzleFlashTimer = CONFIG.muzzleFlashDuration
+
+            // Calculate firing direction
+            const { playerYaw, playerPitch, playerX, playerY, playerZ } = state
+            const cosYaw = Math.cos(playerYaw)
+            const sinYaw = Math.sin(playerYaw)
+            const cosPitch = Math.cos(playerPitch)
+            const sinPitch = Math.sin(playerPitch)
+
+            // Apply random spread
+            const spread = CONFIG.bulletSpread
+            const spreadX = (Math.random() - 0.5) * spread
+            const spreadY = (Math.random() - 0.5) * spread
+
+            // 3D velocity vector based on look direction
+            const speed = CONFIG.bulletSpeed
+            const spawnDist = CONFIG.bulletSpawnDistance
+
+            state.bullets.push({
+                x: playerX + sinYaw * cosPitch * spawnDist,
+                y: playerY + sinPitch * spawnDist,
+                z: playerZ + cosYaw * cosPitch * spawnDist,
+                vx: sinYaw * cosPitch * speed + spreadX,
+                vy: sinPitch * speed + spreadY,
+                vz: cosYaw * cosPitch * speed,
+            })
+        }
+
+        /**
+         * Updates player state: mouse look, movement, jumping, stamina, and firing
+         */
+        const updatePlayer = () => {
+            const { keys } = state
+
+            // Mouse look
+            state.playerYaw += state.mouseMovementX * CONFIG.mouseSensitivity
+            state.playerPitch -= state.mouseMovementY * CONFIG.mouseSensitivity
+            state.playerPitch = Engine.clamp(state.playerPitch, -CONFIG.pitchLimit, CONFIG.pitchLimit)
+            state.mouseMovementX = 0
+            state.mouseMovementY = 0
+
+            // Movement direction based on yaw
+            const cosYaw = Math.cos(state.playerYaw)
+            const sinYaw = Math.sin(state.playerYaw)
+
+            // Check if player is moving and can sprint
+            const isMoving = keys.forward || keys.backward || keys.left || keys.right
+            state.isSprinting = keys.sprint && state.stamina > 0 && isMoving
+            const speedMult = state.isSprinting ? CONFIG.sprintMultiplier : 1
+
+            // Forward/backward movement
+            if (keys.forward) {
+                state.playerZ += CONFIG.playerSpeed * speedMult * cosYaw
+                state.playerX += CONFIG.playerSpeed * speedMult * sinYaw
+            }
+            if (keys.backward) {
+                const backSpeed = CONFIG.playerSpeed * speedMult * CONFIG.backwardSpeedMultiplier
+                state.playerZ -= backSpeed * cosYaw
+                state.playerX -= backSpeed * sinYaw
+            }
+
+            // Strafing (perpendicular to forward)
+            if (keys.left) {
+                state.playerX -= CONFIG.strafeSpeed * speedMult * cosYaw
+                state.playerZ += CONFIG.strafeSpeed * speedMult * sinYaw
+            }
+            if (keys.right) {
+                state.playerX += CONFIG.strafeSpeed * speedMult * cosYaw
+                state.playerZ -= CONFIG.strafeSpeed * speedMult * sinYaw
+            }
+
+            // Arena bounds
+            state.playerX = Engine.clamp(state.playerX, -CONFIG.arenaBoundsX, CONFIG.arenaBoundsX)
+            state.playerZ = Engine.clamp(state.playerZ, -CONFIG.arenaBoundsZ, CONFIG.arenaBoundsZ)
+
+            // Jumping
+            if (keys.jump && state.isGrounded && state.stamina >= CONFIG.staminaJumpCost) {
+                state.playerVelY = CONFIG.jumpForce
+                state.isGrounded = false
+                state.stamina -= CONFIG.staminaJumpCost
+            }
+
+            // Gravity and landing
+            if (!state.isGrounded) {
+                state.playerVelY -= CONFIG.gravity
+                state.playerY += state.playerVelY
+
+                if (state.playerY <= CONFIG.groundY) {
+                    state.playerY = CONFIG.groundY
+                    state.playerVelY = 0
+                    state.isGrounded = true
+                }
+            }
+
+            // Stamina management
+            state.stamina = state.isSprinting
+                ? Math.max(0, state.stamina - CONFIG.staminaDrain)
+                : Math.min(CONFIG.maxStamina, state.stamina + CONFIG.staminaRegen)
+
+            // Head bob when moving on ground
+            if (isMoving && state.isGrounded) {
+                state.headBob += state.isSprinting ? 0.25 : 0.15
+            } else {
+                state.headBob *= 0.9
+            }
+
+            // Firing
+            if (keys.fire) fireBullet()
+            if (state.fireCooldown > 0) state.fireCooldown--
+        }
+
+        /**
+         * Updates bullets: movement, range culling, and enemy collision
+         */
+        const updateBullets = () => {
+            const { playerX, playerY, playerZ, enemies, bullets } = state
+
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i]
+
+                // Move bullet
+                bullet.x += bullet.vx
+                bullet.y += bullet.vy
+                bullet.z += bullet.vz
+
+                // Distance from player for range culling
+                const dx = bullet.x - playerX
+                const dy = bullet.y - playerY
+                const dz = bullet.z - playerZ
+                const distFromPlayer = Math.sqrt(dx * dx + dy * dy + dz * dz)
+
+                // Remove if too far
+                if (distFromPlayer > CONFIG.maxBulletDistance) {
+                    bullets.splice(i, 1)
+                    continue
+                }
+
+                // Check enemy collisions
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const enemy = enemies[j]
+                    const edx = bullet.x - enemy.x
+                    const edy = bullet.y - enemy.y
+                    const edz = bullet.z - enemy.z
+                    const dist = Math.sqrt(edx * edx + edy * edy + edz * edz)
+                    const hitRadius = ENEMY_TYPES[enemy.type].scale * 0.4
+
+                    if (dist < hitRadius) {
+                        // Apply damage
+                        enemy.health -= CONFIG.bulletDamage
+                        enemy.hitFlash = CONFIG.enemyHitFlashDuration
+                        bullets.splice(i, 1)
+
+                        // Check for kill
+                        if (enemy.health <= 0) {
+                            const typeData = ENEMY_TYPES[enemy.type]
+                            state.score += typeData.score
+                            state.kills++
+                            state.enemiesRemaining--
+
+                            // Spawn explosion effect
+                            state.explosions.push({
+                                x: enemy.x, y: enemy.y, z: enemy.z,
+                                rx: Math.random() * Math.PI,
+                                ry: Math.random() * Math.PI,
+                                life: 0, maxLife: 20,
+                            })
+
+                            spawnPickup(enemy.x, enemy.z)
+                            enemies.splice(j, 1)
+                        }
+                        break
+                    }
+                }
+            }
+        }
+
+        /**
+         * Updates all enemies: movement towards player and attack logic
+         */
+        const updateEnemies = () => {
+            const { playerX, playerZ, wave } = state
+            const waveSpeedBonus = 1 + wave * 0.05
+            const waveDamageBonus = 1 + wave * 0.1
+
+            for (let i = state.enemies.length - 1; i >= 0; i--) {
+                const enemy = state.enemies[i]
+                const type = ENEMY_TYPES[enemy.type]
+
+                // Direction to player
+                const dx = playerX - enemy.x
+                const dz = playerZ - enemy.z
+                const distToPlayer = Math.sqrt(dx * dx + dz * dz)
+
+                // Move towards player
+                if (distToPlayer > 0.1) {
+                    const speed = CONFIG.enemyBaseSpeed * type.speed * waveSpeedBonus
+                    const invDist = 1 / distToPlayer
+                    enemy.x += dx * invDist * speed
+                    enemy.z += dz * invDist * speed
+                }
+
+                // Decrement hit flash
+                if (enemy.hitFlash > 0) enemy.hitFlash--
+
+                // Attack when in range
+                if (distToPlayer <= CONFIG.enemyAttackRange) {
+                    if (enemy.attackCooldown <= 0) {
+                        // Deal damage
+                        state.health -= CONFIG.enemyDamage * waveDamageBonus
+                        state.damageFlashTimer = CONFIG.damageFlashDuration
+                        enemy.attackCooldown = CONFIG.enemyAttackCooldown
+
+                        // Push enemy back
+                        const pushForce = distToPlayer > 0.01 ? 0.5 / distToPlayer : 0.5
+                        enemy.x -= dx * pushForce
+                        enemy.z -= dz * pushForce
+
+                        if (state.health <= 0) endGame()
+                    } else {
+                        enemy.attackCooldown--
+                    }
+                }
+            }
+        }
+
+        const updateExplosions = () => {
+            for (let i = state.explosions.length - 1; i >= 0; i--) {
+                const exp = state.explosions[i]
+                exp.life++
+                exp.rx += 0.1
+                exp.ry += 0.15
+
+                if (exp.life >= exp.maxLife) {
+                    state.explosions.splice(i, 1)
+                }
+            }
+        }
+
+        /**
+         * Updates pickups: collection and despawn logic
+         */
+        const updatePickups = () => {
+            const { playerX, playerZ, pickups } = state
+
+            for (let i = pickups.length - 1; i >= 0; i--) {
+                const pickup = pickups[i]
+                const dx = pickup.x - playerX
+                const dz = pickup.z - playerZ
+                const dist = Math.sqrt(dx * dx + dz * dz)
+
+                // Collect if close enough
+                if (dist < CONFIG.pickupCollectRange) {
+                    if (pickup.type === 'health') {
+                        state.health = Math.min(CONFIG.initialHealth, state.health + CONFIG.healthPackHeal)
+                    } else {
+                        state.ammo += CONFIG.ammoPackAmount
+                    }
+                    pickups.splice(i, 1)
+                    continue
+                }
+
+                // Despawn if too far
+                if (dist > CONFIG.pickupDespawnRange) {
+                    pickups.splice(i, 1)
+                }
+            }
+        }
+
+        const updateWave = () => {
+            // Wave announcement timer
+            if (state.waveAnnounceTimer > 0) {
+                state.waveAnnounceTimer--
+                if (state.waveAnnounceTimer === 0) {
+                    waveAnnounce.classList.remove('active')
+                }
+            }
+
+            // Spawn enemies
+            if (state.enemiesSpawned < state.enemiesToSpawn) {
+                state.spawnCooldown--
+                if (state.spawnCooldown <= 0) {
+                    spawnEnemy()
+                    // Faster spawning in later waves
+                    state.spawnCooldown = Math.max(20, 60 - state.wave * 5)
+                }
+            }
+
+            // Check wave complete
+            if (state.enemiesRemaining <= 0 && state.enemies.length === 0) {
+                state.waveCooldown--
+                if (state.waveCooldown <= 0) {
+                    startNextWave()
+                }
+            }
+        }
+
+        /**
+         * Starts the next wave with increased enemy count and bonus ammo
+         */
+        const startNextWave = () => {
+            state.wave++
+            state.enemiesToSpawn = CONFIG.baseEnemiesPerWave + (state.wave - 1) * CONFIG.enemiesPerWaveIncrease
+            state.enemiesRemaining = state.enemiesToSpawn
+            state.enemiesSpawned = 0
+            state.spawnCooldown = CONFIG.initialSpawnDelay
+            state.waveCooldown = CONFIG.waveCooldown
+
+            // Wave bonus ammo
+            state.ammo += CONFIG.waveAmmoBonus + state.wave * CONFIG.waveAmmoBonusPerWave
+
+            // Display wave announcement
+            waveAnnounce.textContent = `WAVE ${state.wave}`
+            waveAnnounce.classList.add('active')
+            state.waveAnnounceTimer = CONFIG.waveAnnounceDuration
+        }
+
+        const updateEffects = () => {
+            if (state.damageFlashTimer > 0) {
+                state.damageFlashTimer--
+                damageFlash.classList.toggle('active', state.damageFlashTimer > 0)
+            }
+
+            if (state.muzzleFlashTimer > 0) {
+                state.muzzleFlashTimer--
+                muzzleFlash.classList.toggle('active', state.muzzleFlashTimer > 0)
+            }
+        }
+
+        const updateHUD = () => {
+            healthEl.textContent = Math.max(0, Math.floor(state.health))
+            ammoEl.textContent = state.ammo
+            scoreEl.textContent = state.score
+            waveEl.textContent = state.wave
+            killsEl.textContent = state.kills
+
+            // Color health based on amount
+            if (state.health < 25) {
+                healthEl.style.color = '#ff0000'
+            } else if (state.health < 50) {
+                healthEl.style.color = '#ff6600'
+            } else {
+                healthEl.style.color = '#ff3333'
+            }
+
+            // Stamina bar
+            staminaBar.style.width = `${state.stamina}%`
+            const showStamina = state.stamina < CONFIG.maxStamina
+            staminaContainer.classList.toggle('visible', showStamina)
+
+            // Pointer lock hint
+            pointerHint.style.display = state.pointerLocked ? 'none' : 'block'
+        }
+
+        /**
+         * Initializes and starts a new game
+         * Resets all state and begins the first wave
+         */
+        const startGame = () => {
+            // Game state
+            state.running = true
+            state.gameOver = false
+            state.health = CONFIG.initialHealth
+            state.ammo = CONFIG.initialAmmo
+            state.stamina = CONFIG.maxStamina
+
+            // Player position and physics
+            state.playerX = 0
+            state.playerZ = 0
+            state.playerY = 0
+            state.playerVelY = 0
+            state.playerYaw = 0
+            state.playerPitch = 0
+            state.isGrounded = true
+            state.isSprinting = false
+            state.headBob = 0
+
+            // Score and progression
+            state.score = 0
+            state.kills = 0
+            state.wave = 0
+
+            // Entity arrays
+            state.enemies = []
+            state.bullets = []
+            state.pickups = []
+            state.explosions = []
+            state.frameCount = 0
+
+            // UI
+            startOverlay.classList.add('hidden')
+            gameOverOverlay.classList.add('hidden')
+
+            // Enable mouse look
+            gameContainer.requestPointerLock()
+
+            startNextWave()
+            gameLoop()
+        }
+
+        const endGame = () => {
+            state.running = false
+            state.gameOver = true
+            state.health = 0
+
+            finalKillsEl.textContent = state.kills
+            finalWavesEl.textContent = state.wave
+            finalScoreEl.textContent = state.score
+
+            gameOverOverlay.classList.remove('hidden')
+            updateHUD()
+        }
+
+        const gameLoop = () => {
+            if (!state.running) return
+
+            state.frameCount++
+
+            updatePlayer()
+            updateBullets()
+            updateEnemies()
+            updateExplosions()
+            updatePickups()
+            updateWave()
+            updateEffects()
+            updateHUD()
+
+            renderGame()
+
+            requestAnimationFrame(gameLoop)
+        }
+
+        // ============ INPUT HANDLING ============
+
+        /** Key bindings mapping */
+        const KEY_BINDINGS = {
+            forward: ['w', 'arrowup'],
+            backward: ['s', 'arrowdown'],
+            left: ['a', 'arrowleft'],
+            right: ['d', 'arrowright'],
+        }
+
+        /**
+         * Handles keyboard input for movement and actions
+         */
+        const handleKeyDown = (e) => {
+            const key = e.key.toLowerCase()
+            const { keys } = state
+
+            // Movement keys
+            if (KEY_BINDINGS.forward.includes(key)) keys.forward = true
+            if (KEY_BINDINGS.backward.includes(key)) keys.backward = true
+            if (KEY_BINDINGS.left.includes(key)) keys.left = true
+            if (KEY_BINDINGS.right.includes(key)) keys.right = true
+
+            // Action keys
+            if (e.key === ' ') {
+                e.preventDefault()
+                keys.jump = true
+            }
+            if (e.key === 'Shift') keys.sprint = true
+            if (e.key === 'Escape') document.exitPointerLock()
+        }
+
+        const handleKeyUp = (e) => {
+            const key = e.key.toLowerCase()
+            const { keys } = state
+
+            if (KEY_BINDINGS.forward.includes(key)) keys.forward = false
+            if (KEY_BINDINGS.backward.includes(key)) keys.backward = false
+            if (KEY_BINDINGS.left.includes(key)) keys.left = false
+            if (KEY_BINDINGS.right.includes(key)) keys.right = false
+            if (e.key === ' ') keys.jump = false
+            if (e.key === 'Shift') keys.sprint = false
+        }
+
+        /**
+         * Handles mouse button input for firing
+         */
+        const handleMouseDown = (e) => {
+            if (e.button !== 0) return
+
+            if (state.running && state.pointerLocked) {
+                state.keys.fire = true
+            } else if (state.running) {
+                gameContainer.requestPointerLock()
+            }
+        }
+
+        const handleMouseUp = (e) => {
+            if (e.button === 0) state.keys.fire = false
+        }
+
+        /**
+         * Handles mouse movement for look controls
+         */
+        const handleMouseMove = (e) => {
+            if (state.pointerLocked && state.running) {
+                state.mouseMovementX += e.movementX
+                state.mouseMovementY += e.movementY
+            }
+        }
+
+        // Register event listeners
+        document.addEventListener('keydown', handleKeyDown)
+        document.addEventListener('keyup', handleKeyUp)
+        document.addEventListener('mousedown', handleMouseDown)
+        document.addEventListener('mouseup', handleMouseUp)
+        document.addEventListener('mousemove', handleMouseMove)
+        document.addEventListener('contextmenu', (e) => e.preventDefault())
+
+        // Pointer lock state management
+        document.addEventListener('pointerlockchange', () => {
+            state.pointerLocked = document.pointerLockElement === gameContainer
+        })
+
+        document.addEventListener('pointerlockerror', (e) => {
+            console.warn('[Input] Pointer lock failed:', e)
+        })
+
+        // Button handlers
+        document.getElementById('startBtn').addEventListener('click', startGame)
+        document.getElementById('restartBtn').addEventListener('click', startGame)
+
+        // Mobile controls
+        const setupMobileBtn = (id, key) => {
+            const btn = document.getElementById(id)
+            if (!btn) return
+
+            const start = (e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                state.keys[key] = true
+            }
+            const end = (e) => {
+                e.preventDefault()
+                state.keys[key] = false
+            }
+
+            btn.addEventListener('touchstart', start, { passive: false })
+            btn.addEventListener('touchend', end, { passive: false })
+            btn.addEventListener('mousedown', start)
+            btn.addEventListener('mouseup', end)
+            btn.addEventListener('mouseleave', end)
+        }
+
+        setupMobileBtn('btnLeft', 'left')
+        setupMobileBtn('btnRight', 'right')
+        setupMobileBtn('btnFire', 'fire')
+
+        // ============ IDLE ANIMATION ============
+        let idleFrameCount = 0
+
+        const idleAnimation = () => {
+            if (state.running) return
+
+            Engine.clearBuffer(buffer)
+
+            // Reset player state for idle view
+            state.playerX = 0
+            state.playerZ = 0
+            state.playerY = 0
+            state.playerYaw = 0
+            state.playerPitch = 0
+            state.headBob = 0
+
+            idleFrameCount++
+            state.frameCount = idleFrameCount
+
+            // Show demo enemy - render FIRST so environment fills behind
+            const demoEnemy = {
+                type: 'demon',
+                x: Math.sin(idleFrameCount * 0.02) * 0.5,
+                y: -0.3,
+                z: 5 + Math.sin(idleFrameCount * 0.01) * 2,
+                hitFlash: 0,
+                id: 0,
+            }
+            renderEnemy(demoEnemy)
+
+            // Fill environment after enemy (fills empty cells)
+            renderEnvironment()
+
+            // Gun always on top
+            renderGun()
+
+            Engine.flushBuffer(buffer, renderArea)
+            requestAnimationFrame(idleAnimation)
+        }
+
+        idleAnimation()
+    </script>
+</body>
+
+</html>

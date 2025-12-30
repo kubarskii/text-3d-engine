@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⬡ VOID RUNNER</title>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #030308;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 80%, rgba(120, 0, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(255, 0, 120, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(0, 255, 200, 0.03) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            max-width: 100%;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 900px;
+            padding: 0 10px;
+        }
+
+        .title {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 28px;
+            color: #ff0080;
+            text-shadow:
+                0 0 10px #ff008066,
+                0 0 30px #ff008033,
+                0 0 60px #ff008022;
+            letter-spacing: 4px;
+        }
+
+        .score-panel {
+            display: flex;
+            gap: 24px;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #666;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff6;
+        }
+
+        .stat-value.lives {
+            color: #ff0080;
+            text-shadow: 0 0 10px #ff008066;
+        }
+
+        .stat-value.hi-score {
+            color: #ffd700;
+            text-shadow: 0 0 10px #ffd70066;
+        }
+
+        .game-container {
+            position: relative;
+            border: 2px solid #ff008044;
+            border-radius: 8px;
+            background: linear-gradient(180deg, #0a0010 0%, #050008 100%);
+            box-shadow:
+                0 0 30px #ff008022,
+                inset 0 0 60px #00000088;
+            overflow: hidden;
+        }
+
+        .game-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #ff0080, transparent);
+        }
+
+        .render-area {
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 5px;
+            line-height: 6px;
+            letter-spacing: 1px;
+            color: #0ff;
+            text-shadow: 0 0 4px #0ff4;
+            white-space: pre;
+            padding: 0;
+            min-height: 400px;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(3, 3, 8, 0.92);
+            backdrop-filter: blur(4px);
+            z-index: 10;
+            transition: opacity 0.3s;
+        }
+
+        .overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .overlay-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 48px;
+            font-weight: 900;
+            color: #ff0080;
+            text-shadow:
+                0 0 20px #ff008088,
+                0 0 40px #ff008044;
+            margin-bottom: 20px;
+            letter-spacing: 6px;
+        }
+
+        .overlay-subtitle {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            color: #0ff;
+            margin-bottom: 30px;
+            opacity: 0.8;
+        }
+
+        .start-btn {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            padding: 16px 48px;
+            background: transparent;
+            border: 2px solid #ff0080;
+            color: #ff0080;
+            cursor: pointer;
+            letter-spacing: 3px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .start-btn:hover {
+            background: #ff008022;
+            box-shadow:
+                0 0 20px #ff008044,
+                inset 0 0 20px #ff008022;
+            transform: scale(1.05);
+        }
+
+        .instructions {
+            margin-top: 30px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            line-height: 2;
+        }
+
+        .instructions kbd {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 4px;
+            color: #0ff;
+            margin: 0 4px;
+        }
+
+        .game-over-stats {
+            font-family: 'Share Tech Mono', monospace;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .game-over-stats div {
+            font-size: 18px;
+            color: #0ff;
+            margin: 8px 0;
+        }
+
+        .game-over-stats .final-score {
+            font-size: 36px;
+            color: #ffd700;
+            text-shadow: 0 0 20px #ffd70066;
+        }
+
+        .new-record {
+            color: #ff0080 !important;
+            animation: pulse 0.5s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from {
+                opacity: 0.7;
+                transform: scale(1);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+        }
+
+        /* Mobile styles */
+        @media (max-width: 768px) {
+            .title {
+                font-size: 20px;
+                letter-spacing: 2px;
+            }
+
+            .score-panel {
+                gap: 16px;
+            }
+
+            .stat-value {
+                font-size: 18px;
+            }
+
+            .render-area {
+                font-size: 3.5px;
+                line-height: 4.5px;
+                letter-spacing: 0.5px;
+                padding: 8px;
+                min-height: 300px;
+            }
+
+            .overlay-title {
+                font-size: 32px;
+            }
+
+            .instructions {
+                padding: 0 20px;
+            }
+
+            .mobile-controls {
+                display: flex;
+                gap: 10px;
+                margin-top: 16px;
+            }
+
+            .mobile-btn {
+                width: 60px;
+                height: 60px;
+                background: rgba(255, 0, 128, 0.1);
+                border: 2px solid #ff008066;
+                border-radius: 12px;
+                color: #ff0080;
+                font-size: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                user-select: none;
+                -webkit-user-select: none;
+                touch-action: manipulation;
+            }
+
+            .mobile-btn:active {
+                background: rgba(255, 0, 128, 0.3);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .render-area {
+                font-size: 2.8px;
+                line-height: 3.8px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+        .mobile-controls {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-controls {
+                display: flex;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-wrapper">
+        <div class="header">
+            <div class="title">VOID RUNNER</div>
+            <div class="score-panel">
+                <div class="stat">
+                    <div class="stat-label">Score</div>
+                    <div class="stat-value" id="score">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Lives</div>
+                    <div class="stat-value lives" id="lives">♥♥♥</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Best</div>
+                    <div class="stat-value hi-score" id="hiScore">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-container">
+            <div class="render-area" id="renderArea"></div>
+
+            <div class="overlay" id="startOverlay">
+                <div class="overlay-title">VOID RUNNER</div>
+                <div class="overlay-subtitle">Navigate through the asteroid field</div>
+                <button class="start-btn" id="startBtn">START</button>
+                <div class="instructions">
+                    <kbd>←</kbd> <kbd>→</kbd> Move left/right<br>
+                    <kbd>↑</kbd> <kbd>↓</kbd> Move up/down<br>
+                    Collect <span style="color: #ffd700">★</span> stars • Avoid <span style="color: #ff0080">◆</span>
+                    asteroids
+                </div>
+            </div>
+
+            <div class="overlay hidden" id="gameOverOverlay">
+                <div class="overlay-title">GAME OVER</div>
+                <div class="game-over-stats">
+                    <div class="final-score" id="finalScore">0</div>
+                    <div id="newRecord" style="display: none; color: #ff0080;">★ NEW RECORD ★</div>
+                </div>
+                <button class="start-btn" id="restartBtn">TRY AGAIN</button>
+            </div>
+        </div>
+
+        <div class="mobile-controls">
+            <button class="mobile-btn" id="btnLeft">◀</button>
+            <button class="mobile-btn" id="btnUp">▲</button>
+            <button class="mobile-btn" id="btnDown">▼</button>
+            <button class="mobile-btn" id="btnRight">▶</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as Engine from './engine.js'
+        import * as Models from './models.js'
+
+        // ============ GAME CONFIGURATION ============
+        const CONFIG = {
+            width: 180,
+            height: 80,
+            playerSpeed: 0.04,
+            asteroidSpeed: 0.015,
+            starSpeed: 0.012,
+            spawnRate: 60,        // frames between spawns
+            starSpawnRate: 120,   // frames between star spawns
+            maxAsteroids: 12,
+            maxStars: 5,
+            collisionRadius: 0.15,
+            starCollisionRadius: 0.2,
+            lives: 3,
+            invincibilityFrames: 90,
+            scorePerStar: 100,
+            scorePerSecond: 1,
+        }
+
+        // ============ GAME STATE ============
+        const state = {
+            running: false,
+            gameOver: false,
+            score: 0,
+            hiScore: parseInt(localStorage.getItem('voidRunnerHiScore') || '0'),
+            lives: CONFIG.lives,
+            invincible: 0,
+            frameCount: 0,
+            player: { x: 0, y: 0 },
+            asteroids: [],
+            stars: [],
+            keys: { left: false, right: false, up: false, down: false },
+        }
+
+        // ============ MODELS - now from models.js ============
+        const shipModel = Models.createShip(0.12)
+        const asteroidModels = [
+            Models.createOctahedron(0.08),
+            Models.createTetrahedron(0.1),
+            Models.createCube(0.07),
+            Models.createIcosahedron(0.06),
+        ]
+        const starModel = Models.createStar(0.08)
+
+        // ============ DOM ELEMENTS ============
+        const renderArea = document.getElementById('renderArea')
+        const scoreEl = document.getElementById('score')
+        const livesEl = document.getElementById('lives')
+        const hiScoreEl = document.getElementById('hiScore')
+        const startOverlay = document.getElementById('startOverlay')
+        const gameOverOverlay = document.getElementById('gameOverOverlay')
+        const finalScoreEl = document.getElementById('finalScore')
+        const newRecordEl = document.getElementById('newRecord')
+        const startBtn = document.getElementById('startBtn')
+        const restartBtn = document.getElementById('restartBtn')
+
+        // ============ RENDERING ============
+        let buffer = Engine.createBuffer(CONFIG.width, CONFIG.height)
+        const dimensions = { width: CONFIG.width, height: CONFIG.height }
+
+        // ============ ENVIRONMENT RENDERING ============
+        // Use only ASCII characters for guaranteed monospace rendering
+        // High-contrast character set for better visibility
+        const SKY_CHAR = '-'
+        const STAR_CHARS = '*+o'
+        const GROUND_CHARS = '-~=#@'  // ASCII gradient: light → dark
+        const HORIZON_RATIO = 0.75  // Ground starts at 75% down
+
+        // Moving star particles for parallax effect
+        const starParticles = []
+        for (let i = 0; i < 60; i++) {
+            starParticles.push({
+                x: Math.random() * CONFIG.width,
+                y: Math.random() * CONFIG.height * HORIZON_RATIO,
+                speed: 0.1 + Math.random() * 0.3,
+                char: STAR_CHARS[Math.floor(Math.random() * STAR_CHARS.length)]
+            })
+        }
+
+        /**
+         * Renders the environment (sky and ground) into empty buffer cells
+         * Uses consistent character-based rendering like entities
+         */
+        const renderEnvironment = () => {
+            const horizonY = Math.floor(CONFIG.height * HORIZON_RATIO)
+
+            // Fill environment into empty cells only
+            for (let y = 0; y <= CONFIG.height; y++) {
+                const row = buffer.chars[y]
+                for (let x = 0; x <= CONFIG.width; x++) {
+                    if (row[x] !== ' ') continue  // Skip non-empty (entities render on top)
+
+                    if (y < horizonY) {
+                        // Sky - sparse dots
+                        row[x] = ((x + y) % 7 === 0) ? SKY_CHAR : ' '
+                    } else {
+                        // Ground - gradient based on distance from horizon
+                        const distFromHorizon = (y - horizonY) / (CONFIG.height - horizonY)
+                        const baseIdx = Math.floor(distFromHorizon * (GROUND_CHARS.length - 1))
+                        const pattern = ((x + y) % 5 === 0) ? 1 : 0
+                        const charIdx = Math.min(baseIdx + pattern, GROUND_CHARS.length - 1)
+                        row[x] = GROUND_CHARS[charIdx]
+                    }
+                }
+            }
+
+            // Animate star particles (in sky area only)
+            for (const star of starParticles) {
+                const ix = Math.floor(star.x)
+                const iy = Math.floor(star.y)
+                if (ix >= 0 && ix < CONFIG.width && iy >= 0 && iy < horizonY) {
+                    // Overwrite sky pattern with brighter star
+                    buffer.chars[iy][ix] = star.char
+                }
+                star.y += star.speed
+                if (star.y >= horizonY) {
+                    star.y = 0
+                    star.x = Math.random() * CONFIG.width
+                }
+            }
+        }
+
+        const renderGame = () => {
+            Engine.clearBuffer(buffer)
+
+            // Render entities FIRST (they reserve pixels)
+            // Render player ship
+            const shipBlink = state.invincible > 0 && Math.floor(state.invincible / 5) % 2 === 0
+            if (!shipBlink) {
+                const shipTransformed = Engine.transformModel(shipModel, {
+                    rx: 0.3,
+                    ry: 0,
+                    rz: 0,
+                    tx: state.player.x,
+                    ty: state.player.y,
+                    tz: 2,
+                    scale: 1
+                })
+                Engine.renderModel(buffer, shipModel, shipTransformed, renderArea, dimensions, {
+                    showVertices: true,
+                    vertexChar: '◈'
+                })
+            }
+
+            // Render asteroids
+            for (const asteroid of state.asteroids) {
+                const transformed = Engine.transformModel(asteroid.model, {
+                    rx: asteroid.rx,
+                    ry: asteroid.ry,
+                    rz: 0,
+                    tx: asteroid.x,
+                    ty: asteroid.y,
+                    tz: asteroid.z,
+                    scale: asteroid.scale
+                })
+                Engine.renderModel(buffer, asteroid.model, transformed, renderArea, dimensions, {
+                    showVertices: true,
+                    vertexChar: '◆',
+                    lineChar: '▓'
+                })
+            }
+
+            // Render stars (collectibles)
+            for (const star of state.stars) {
+                const transformed = Engine.transformModel(starModel, {
+                    rx: 0,
+                    ry: 0,
+                    rz: star.rz,
+                    tx: star.x,
+                    ty: star.y,
+                    tz: star.z,
+                    scale: 1
+                })
+                Engine.renderModel(buffer, starModel, transformed, renderArea, dimensions, {
+                    showVertices: true,
+                    vertexChar: '★',
+                    lineChar: '─'
+                })
+            }
+
+            // Fill environment AFTER entities (fills empty cells only)
+            renderEnvironment()
+
+            Engine.flushBuffer(buffer, renderArea)
+        }
+
+        // ============ GAME LOGIC ============
+        const spawnAsteroid = () => {
+            if (state.asteroids.length >= CONFIG.maxAsteroids) return
+
+            const model = asteroidModels[Math.floor(Math.random() * asteroidModels.length)]
+            state.asteroids.push({
+                model,
+                x: (Math.random() - 0.5) * 1.5,
+                y: (Math.random() - 0.5) * 0.8,
+                z: 4 + Math.random() * 2,
+                rx: Math.random() * Math.PI * 2,
+                ry: Math.random() * Math.PI * 2,
+                rotSpeedX: (Math.random() - 0.5) * 0.1,
+                rotSpeedY: (Math.random() - 0.5) * 0.1,
+                scale: 0.8 + Math.random() * 0.6,
+            })
+        }
+
+        const spawnStar = () => {
+            if (state.stars.length >= CONFIG.maxStars) return
+
+            state.stars.push({
+                x: (Math.random() - 0.5) * 1.2,
+                y: (Math.random() - 0.5) * 0.6,
+                z: 4 + Math.random() * 2,
+                rz: Math.random() * Math.PI * 2,
+            })
+        }
+
+        const updatePlayer = () => {
+            if (state.keys.left) state.player.x -= CONFIG.playerSpeed
+            if (state.keys.right) state.player.x += CONFIG.playerSpeed
+            if (state.keys.up) state.player.y += CONFIG.playerSpeed
+            if (state.keys.down) state.player.y -= CONFIG.playerSpeed
+
+            // Clamp to bounds
+            state.player.x = Engine.clamp(state.player.x, -0.7, 0.7)
+            state.player.y = Engine.clamp(state.player.y, -0.35, 0.35)
+        }
+
+        const updateAsteroids = () => {
+            for (let i = state.asteroids.length - 1; i >= 0; i--) {
+                const a = state.asteroids[i]
+                a.z -= CONFIG.asteroidSpeed
+                a.rx += a.rotSpeedX
+                a.ry += a.rotSpeedY
+
+                // Remove if past camera
+                if (a.z < 0.5) {
+                    state.asteroids.splice(i, 1)
+                    continue
+                }
+
+                // Collision with player
+                if (state.invincible <= 0 && a.z < 2.5 && a.z > 1.5) {
+                    const dx = a.x - state.player.x
+                    const dy = a.y - state.player.y
+                    const dist = Math.sqrt(dx * dx + dy * dy)
+
+                    if (dist < CONFIG.collisionRadius * a.scale) {
+                        state.lives--
+                        state.invincible = CONFIG.invincibilityFrames
+                        state.asteroids.splice(i, 1)
+
+                        if (state.lives <= 0) {
+                            endGame()
+                        }
+                    }
+                }
+            }
+        }
+
+        const updateStars = () => {
+            for (let i = state.stars.length - 1; i >= 0; i--) {
+                const s = state.stars[i]
+                s.z -= CONFIG.starSpeed
+                s.rz += 0.05
+
+                // Remove if past camera
+                if (s.z < 0.5) {
+                    state.stars.splice(i, 1)
+                    continue
+                }
+
+                // Collection check
+                if (s.z < 2.5 && s.z > 1.5) {
+                    const dx = s.x - state.player.x
+                    const dy = s.y - state.player.y
+                    const dist = Math.sqrt(dx * dx + dy * dy)
+
+                    if (dist < CONFIG.starCollisionRadius) {
+                        state.score += CONFIG.scorePerStar
+                        state.stars.splice(i, 1)
+                    }
+                }
+            }
+        }
+
+        const updateUI = () => {
+            scoreEl.textContent = state.score.toString()
+            hiScoreEl.textContent = state.hiScore.toString()
+
+            let hearts = ''
+            for (let i = 0; i < state.lives; i++) hearts += '♥'
+            for (let i = state.lives; i < CONFIG.lives; i++) hearts += '♡'
+            livesEl.textContent = hearts
+        }
+
+        const startGame = () => {
+            state.running = true
+            state.gameOver = false
+            state.score = 0
+            state.lives = CONFIG.lives
+            state.invincible = 0
+            state.frameCount = 0
+            state.player = { x: 0, y: 0 }
+            state.asteroids = []
+            state.stars = []
+
+            startOverlay.classList.add('hidden')
+            gameOverOverlay.classList.add('hidden')
+
+            updateUI()
+            gameLoop()
+        }
+
+        const endGame = () => {
+            state.running = false
+            state.gameOver = true
+
+            const isNewRecord = state.score > state.hiScore
+            if (isNewRecord) {
+                state.hiScore = state.score
+                localStorage.setItem('voidRunnerHiScore', state.hiScore.toString())
+            }
+
+            finalScoreEl.textContent = state.score.toString()
+            newRecordEl.style.display = isNewRecord ? 'block' : 'none'
+            gameOverOverlay.classList.remove('hidden')
+
+            updateUI()
+        }
+
+        const gameLoop = () => {
+            if (!state.running) return
+
+            state.frameCount++
+
+            // Score for surviving
+            if (state.frameCount % 60 === 0) {
+                state.score += CONFIG.scorePerSecond
+            }
+
+            // Spawn asteroids
+            if (state.frameCount % CONFIG.spawnRate === 0) {
+                spawnAsteroid()
+            }
+
+            // Spawn stars
+            if (state.frameCount % CONFIG.starSpawnRate === 0) {
+                spawnStar()
+            }
+
+            // Update game state
+            updatePlayer()
+            updateAsteroids()
+            updateStars()
+
+            if (state.invincible > 0) state.invincible--
+
+            updateUI()
+            renderGame()
+
+            requestAnimationFrame(gameLoop)
+        }
+
+        // ============ INPUT HANDLING ============
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') state.keys.left = true
+            if (e.key === 'ArrowRight' || e.key === 'd') state.keys.right = true
+            if (e.key === 'ArrowUp' || e.key === 'w') state.keys.up = true
+            if (e.key === 'ArrowDown' || e.key === 's') state.keys.down = true
+
+            // Start game on any key when not running
+            if (!state.running && !state.gameOver) {
+                e.preventDefault()
+                startGame()
+            }
+        })
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') state.keys.left = false
+            if (e.key === 'ArrowRight' || e.key === 'd') state.keys.right = false
+            if (e.key === 'ArrowUp' || e.key === 'w') state.keys.up = false
+            if (e.key === 'ArrowDown' || e.key === 's') state.keys.down = false
+        })
+
+        // Button handlers
+        startBtn.addEventListener('click', startGame)
+        restartBtn.addEventListener('click', startGame)
+
+        // Mobile controls
+        const setupMobileBtn = (btnId, key) => {
+            const btn = document.getElementById(btnId)
+            if (!btn) return
+
+            const start = () => { state.keys[key] = true }
+            const end = () => { state.keys[key] = false }
+
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); start() })
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); end() })
+            btn.addEventListener('mousedown', start)
+            btn.addEventListener('mouseup', end)
+            btn.addEventListener('mouseleave', end)
+        }
+
+        setupMobileBtn('btnLeft', 'left')
+        setupMobileBtn('btnRight', 'right')
+        setupMobileBtn('btnUp', 'up')
+        setupMobileBtn('btnDown', 'down')
+
+        // ============ INITIALIZATION ============
+        hiScoreEl.textContent = state.hiScore.toString()
+
+        // Show idle animation on start screen
+        let idleAngle = 0
+        const idleAnimation = () => {
+            if (state.running) return
+
+            Engine.clearBuffer(buffer)
+
+            // Render ship first (entities before environment)
+            const shipTransformed = Engine.transformModel(shipModel, {
+                rx: 0.3 + Math.sin(idleAngle * 2) * 0.1,
+                ry: Math.sin(idleAngle) * 0.3,
+                rz: 0,
+                tx: Math.sin(idleAngle * 0.7) * 0.2,
+                ty: Math.cos(idleAngle * 0.5) * 0.1,
+                tz: 2,
+                scale: 1.2
+            })
+            Engine.renderModel(buffer, shipModel, shipTransformed, renderArea, dimensions, {
+                showVertices: true,
+                vertexChar: '◈'
+            })
+
+            // Fill environment after entity
+            renderEnvironment()
+
+            Engine.flushBuffer(buffer, renderArea)
+            idleAngle += 0.03
+
+            requestAnimationFrame(idleAnimation)
+        }
+
+        idleAnimation()
+    </script>
+</body>
+
+</html>
