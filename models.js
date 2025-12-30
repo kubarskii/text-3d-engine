@@ -885,3 +885,108 @@ export const createTextHello = (scale = 0.08) => {
     return { vertices, edges }
 }
 
+// ============ GENERIC VOXEL TEXT ============
+
+const PIXEL_FONT_3X5 = {
+    A: ["010", "101", "111", "101", "101"],
+    B: ["110", "101", "110", "101", "110"],
+    C: ["011", "100", "100", "100", "011"],
+    D: ["110", "101", "101", "101", "110"],
+    E: ["111", "100", "110", "100", "111"],
+    F: ["111", "100", "110", "100", "100"],
+    G: ["011", "100", "101", "101", "011"],
+    H: ["101", "101", "111", "101", "101"],
+    I: ["111", "010", "010", "010", "111"],
+    J: ["011", "001", "001", "101", "010"],
+    K: ["101", "101", "110", "101", "101"],
+    L: ["100", "100", "100", "100", "111"],
+    M: ["101", "111", "111", "101", "101"],
+    N: ["101", "111", "111", "111", "101"],
+    O: ["010", "101", "101", "101", "010"],
+    P: ["110", "101", "110", "100", "100"],
+    Q: ["010", "101", "101", "111", "011"],
+    R: ["110", "101", "110", "101", "101"],
+    S: ["011", "100", "010", "001", "110"],
+    T: ["111", "010", "010", "010", "010"],
+    U: ["101", "101", "101", "101", "111"],
+    V: ["101", "101", "101", "101", "010"],
+    W: ["101", "101", "111", "111", "101"],
+    X: ["101", "101", "010", "101", "101"],
+    Y: ["101", "101", "010", "010", "010"],
+    Z: ["111", "001", "010", "100", "111"],
+    '0': ["111", "101", "101", "101", "111"],
+    '1': ["010", "110", "010", "010", "111"],
+    '2': ["111", "001", "111", "100", "111"],
+    '3': ["111", "001", "111", "001", "111"],
+    '4': ["101", "101", "111", "001", "001"],
+    '5': ["111", "100", "111", "001", "111"],
+    '6': ["111", "100", "111", "101", "111"],
+    '7': ["111", "001", "010", "010", "010"],
+    '8': ["111", "101", "111", "101", "111"],
+    '9': ["111", "101", "111", "001", "111"],
+    '?': ["111", "001", "011", "000", "010"],
+    '!': ["010", "010", "010", "000", "010"],
+    '#': ["101", "111", "101", "111", "101"],
+}
+
+const appendModel = (target, model) => {
+    const offset = target.vertices.length
+    target.vertices.push(...model.vertices)
+    target.edges.push(...model.edges.map(([a, b]) => [a + offset, b + offset]))
+}
+
+const translateModel = (model, dx, dy, dz) => ({
+    vertices: model.vertices.map(v => point(v.x + dx, v.y + dy, v.z + dz)),
+    edges: [...model.edges]
+})
+
+/**
+ * Create a voxel-style 3D text model from a simple 3x5 bitmap font
+ * @param {string} text - text to render (supports A-Z, 0-9, !, ?, #, space)
+ * @param {{ pixelSize?: number, depth?: number, letterSpacing?: number, lineSpacing?: number }} [options]
+ * @returns {Model3D}
+ */
+export const createVoxelText = (text, options = {}) => {
+    const {
+        pixelSize = 0.3,
+        depth = 0.3,
+        letterSpacing = 0.25,
+        lineSpacing = 0.35,
+    } = options
+
+    const lines = text.split(/\n/)
+    const baseModel = { vertices: [], edges: [] }
+    const halfPixel = pixelSize / 2
+
+    lines.forEach((line, lineIdx) => {
+        const upperLine = line.toUpperCase()
+        let cursorX = 0
+        const cursorY = -lineIdx * ((5 * pixelSize) + lineSpacing)
+
+        for (const char of upperLine) {
+            if (char === ' ') {
+                cursorX += (3 * pixelSize) + letterSpacing
+                continue
+            }
+
+            const bitmap = PIXEL_FONT_3X5[char] || PIXEL_FONT_3X5['?']
+            bitmap.forEach((row, rowIdx) => {
+                row.split('').forEach((pixel, colIdx) => {
+                    if (pixel !== '1') return
+
+                    const cube = createCube(halfPixel)
+                    const offsetX = cursorX + (colIdx - 1) * pixelSize
+                    const offsetY = cursorY + ((2 - rowIdx) * pixelSize)
+                    const translated = translateModel(cube, offsetX, offsetY, 0)
+                    appendModel(baseModel, translated)
+                })
+            })
+
+            cursorX += (3 * pixelSize) + letterSpacing
+        }
+    })
+
+    // Ensure some depth by translating the assembled text slightly along Z
+    return translateModel(baseModel, 0, 0, depth)
+}
+
