@@ -49,11 +49,11 @@ export const point = (x, y, z) => {
 }
 
 /**
- * Converting from world coordinates to screen coordinates ready for canvas rendering
- * @param {RenderResult} point
- * @param {number} width
- * @param {number} height
- * @returns {RenderResult}
+ * Convert from normalized coordinates (-1 to 1) to screen coordinates (0 to width/height)
+ * @param {RenderResult} point - Point with normalized coordinates
+ * @param {number} width - Screen width
+ * @param {number} height - Screen height
+ * @returns {RenderResult} Point in screen coordinates
 */
 export const normalize = ({ x, y }, width, height) => {
     return {
@@ -63,8 +63,9 @@ export const normalize = ({ x, y }, width, height) => {
 }
 
 /**
- * @param {Point} param0
- * @returns {RenderResult}
+ * Apply perspective projection (divide by Z for perspective)
+ * @param {Point} point - 3D point (destructured as {x, y, z})
+ * @returns {RenderResult} 2D projected point (returns {x: 0, y: 0} if z <= 0)
  */
 export const normalizeZ = ({ x, y, z }) => {
     if (z <= 0) {
@@ -74,10 +75,11 @@ export const normalizeZ = ({ x, y, z }) => {
 }
 
 /**
- * @param {Point} point
- * @param {number} width
- * @param {number} height
- * @returns {RenderResult}
+ * Project a 3D point to 2D screen coordinates
+ * @param {Point} point - 3D point in world space
+ * @param {number} width - Screen width
+ * @param {number} height - Screen height
+ * @returns {RenderResult} 2D screen coordinates
  */
 export const renderPoint = (point, width, height) => {
     return normalize(normalizeZ(point), width, height)
@@ -383,7 +385,7 @@ export const parseOBJ = (objString) => {
                 .map(p => {
                     const idxStr = p.split('/')[0].trim()
                     if (!idxStr) return null
-                    
+
                     let idx = parseInt(idxStr, 10)
                     // Handle negative indices (relative to current vertex count)
                     if (idx < 0) {
@@ -391,7 +393,7 @@ export const parseOBJ = (objString) => {
                     }
                     // Convert from 1-based to 0-based
                     idx = idx - 1
-                    
+
                     // Validate index is within bounds
                     if (isNaN(idx) || idx < 0 || idx >= vertices.length) {
                         return null
@@ -399,7 +401,7 @@ export const parseOBJ = (objString) => {
                     return idx
                 })
                 .filter(idx => idx !== null)
-            
+
             // Only process if we have at least 2 valid indices
             if (indices.length >= 2) {
                 for (let i = 0; i < indices.length; i++) {
@@ -419,9 +421,9 @@ export const parseOBJ = (objString) => {
     }
 
     // Filter out any edges with invalid indices (safety check)
-    const validEdges = edges.filter(([a, b]) => 
+    const validEdges = edges.filter(([a, b]) =>
         typeof a === 'number' && typeof b === 'number' &&
-        a >= 0 && b >= 0 && 
+        a >= 0 && b >= 0 &&
         a < vertices.length && b < vertices.length &&
         a !== b
     )
@@ -504,10 +506,10 @@ export const renderModel = (buffer, model, transformedVertices, container, dimen
     const maxIndex = transformedVertices.length - 1
     const validEdges = model.edges.filter(([i, j]) => {
         return typeof i === 'number' && typeof j === 'number' &&
-               i >= 0 && j >= 0 &&
-               i <= maxIndex && j <= maxIndex &&
-               i !== j &&
-               transformedVertices[i] && transformedVertices[j]
+            i >= 0 && j >= 0 &&
+            i <= maxIndex && j <= maxIndex &&
+            i !== j &&
+            transformedVertices[i] && transformedVertices[j]
     })
 
     const lines = validEdges.map(([i, j]) => ({

@@ -304,6 +304,36 @@
             display: block;
         }
 
+        .voxel-controls {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #00ffcc33;
+            display: none;
+        }
+
+        .voxel-controls.active {
+            display: block;
+        }
+
+        .voxel-controls input[type="text"] {
+            background: rgba(0, 20, 20, 0.5);
+            border: 1px solid #00ffcc55;
+            color: #00ffcc;
+            padding: 6px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 4px;
+        }
+
+        .voxel-controls input[type="text"]:focus {
+            outline: none;
+            border-color: #00ffcc;
+            box-shadow: 0 0 8px #00ffcc44;
+        }
+
         .obj-controls button {
             background: transparent;
             border: 1px solid #00ffcc;
@@ -345,14 +375,54 @@
             <button data-model="icosahedron">5: Icosa</button>
             <button data-model="sphere">6: Sphere</button>
             <button data-model="torus" class="active">7: Torus</button>
-            <button data-model="text3d">8: 3D</button>
-            <button data-model="hello">9: HELLO</button>
+            <button data-model="voxel3d">8: 3D</button>
+            <button data-model="voxelHello">9: HELLO</button>
+            <button data-model="voxelCustom">0: Custom</button>
         </div>
         <div class="model-info" id="modelInfo">
             Vertices: 0 | Edges: 0
         </div>
         <div class="model-info" id="fpsDisplay" style="color: #ffcc00;">
             0 FPS
+        </div>
+        <div class="voxel-controls" id="voxelControls">
+            <h4>📝 Voxel Text Settings</h4>
+            <div class="control-group">
+                <label>
+                    Text:
+                </label>
+                <input type="text" id="voxelTextInput" value="HELLO" placeholder="Enter text...">
+                <small style="color: #00ffcc66; font-size: 9px;">Supports multiple lines (use Enter)</small>
+            </div>
+            <div class="control-group">
+                <label>
+                    Pixel Size:
+                    <span class="control-value" id="voxelPixelSizeValue">0.3</span>
+                </label>
+                <input type="range" id="voxelPixelSizeSlider" min="0.1" max="0.5" step="0.05" value="0.3">
+            </div>
+            <div class="control-group">
+                <label>
+                    Depth:
+                    <span class="control-value" id="voxelDepthValue">0.3</span>
+                </label>
+                <input type="range" id="voxelDepthSlider" min="0.1" max="0.5" step="0.05" value="0.3">
+            </div>
+            <div class="control-group">
+                <label>
+                    Letter Spacing:
+                    <span class="control-value" id="voxelLetterSpacingValue">0.25</span>
+                </label>
+                <input type="range" id="voxelLetterSpacingSlider" min="0" max="0.5" step="0.05" value="0.25">
+            </div>
+            <div class="control-group">
+                <label>
+                    Line Spacing:
+                    <span class="control-value" id="voxelLineSpacingValue">0.35</span>
+                </label>
+                <input type="range" id="voxelLineSpacingSlider" min="0" max="0.8" step="0.05" value="0.35">
+            </div>
+            <button id="updateVoxelText">🔄 Update Text</button>
         </div>
         <div class="obj-controls" id="objControls">
             <h4>📦 OBJ Model Settings</h4>
@@ -426,7 +496,8 @@
         </div>
         <div class="game-links">
             🎮 <a href="game.html">Play VOID RUNNER →</a><br>
-            ☠ <a href="shooter.html" class="shooter">Play HELL CORRIDOR →</a>
+            ☠ <a href="shooter.html" class="shooter">Play HELL CORRIDOR →</a><br>
+            📝 <a href="text-demo.html">Text Demo →</a>
         </div>
     </div>
 
@@ -475,6 +546,15 @@
             depthShading: true
         }
 
+        // Voxel text settings
+        let voxelTextSettings = {
+            text: 'HELLO',
+            pixelSize: 0.3,
+            depth: 0.3,
+            letterSpacing: 0.25,
+            lineSpacing: 0.35
+        }
+
         // Available models - now from models.js
         const models = {
             cube: Models.createCube(0.5),
@@ -484,8 +564,14 @@
             icosahedron: Models.createIcosahedron(0.5),
             sphere: Models.createSphere(0.5, 16, 10),
             torus: Models.createTorus(0.35, 0.15, 20, 10),
-            text3d: Models.createText3D(0.6),
-            hello: Models.createTextHello(0.25),
+            voxel3d: Models.createVoxelText('3D', { pixelSize: 0.3, depth: 0.3, letterSpacing: 0.25 }),
+            voxelHello: Models.createVoxelText('HELLO', { pixelSize: 0.25, depth: 0.25, letterSpacing: 0.2 }),
+            voxelCustom: Models.createVoxelText(voxelTextSettings.text, {
+                pixelSize: voxelTextSettings.pixelSize,
+                depth: voxelTextSettings.depth,
+                letterSpacing: voxelTextSettings.letterSpacing,
+                lineSpacing: voxelTextSettings.lineSpacing
+            }),
         }
 
         // Current model
@@ -523,11 +609,15 @@
 
             Engine.clearBuffer(frameBuffer)
 
+            // Models are now centered at origin, so rotation happens around center
+            // Render at default position (0, 0, 0) + camera offset
             const transformed = Engine.transformModel(currentModel, {
                 rx: angleX,
                 ry: angleY,
                 rz: angleZ,
-                tz: 2,
+                tx: 0,  // X position (centered)
+                ty: 0,  // Y position (centered)
+                tz: 2,  // Z position (camera distance)
                 scale: renderSettings.scale
             })
 
@@ -617,6 +707,20 @@
             })
         }
 
+        // Update voxel text model
+        const updateVoxelTextModel = () => {
+            models.voxelCustom = Models.createVoxelText(voxelTextSettings.text, {
+                pixelSize: voxelTextSettings.pixelSize,
+                depth: voxelTextSettings.depth,
+                letterSpacing: voxelTextSettings.letterSpacing,
+                lineSpacing: voxelTextSettings.lineSpacing
+            })
+            if (currentModel === models.voxelCustom || models.voxelCustom) {
+                currentModel = models.voxelCustom
+                updateModelInfo(currentModel, 'voxelCustom')
+            }
+        }
+
         // Switch model helper
         const switchModel = (modelName) => {
             if (models[modelName]) {
@@ -624,19 +728,38 @@
                 updateModelInfo(currentModel, modelName)
                 updateActiveButton(modelName)
 
-                // Hide OBJ controls if switching to a built-in model
+                // Show/hide OBJ controls
                 const objControls = document.getElementById('objControls')
                 if (objControls && modelName !== 'custom') {
                     objControls.classList.remove('active')
                 } else if (objControls && modelName === 'custom' && rawOBJContent) {
                     objControls.classList.add('active')
                 }
+
+                // Show/hide voxel controls
+                const voxelControls = document.getElementById('voxelControls')
+                if (voxelControls) {
+                    if (modelName === 'voxelCustom') {
+                        voxelControls.classList.add('active')
+                        // Update input to show current custom text
+                        voxelTextInput.value = voxelTextSettings.text
+                        voxelTextInput.disabled = false
+                    } else if (modelName === 'voxel3d' || modelName === 'voxelHello') {
+                        // Show controls but disable text input for preset models
+                        voxelControls.classList.add('active')
+                        voxelTextInput.disabled = true
+                        voxelTextInput.value = modelName === 'voxel3d' ? '3D' : 'HELLO'
+                    } else {
+                        voxelControls.classList.remove('active')
+                        voxelTextInput.disabled = false
+                    }
+                }
             }
         }
 
         // Keyboard controls to switch models
         document.addEventListener('keydown', (e) => {
-            const modelKeys = { '1': 'cube', '2': 'pyramid', '3': 'tetrahedron', '4': 'octahedron', '5': 'icosahedron', '6': 'sphere', '7': 'torus', '8': 'text3d', '9': 'hello' }
+            const modelKeys = { '1': 'cube', '2': 'pyramid', '3': 'tetrahedron', '4': 'octahedron', '5': 'icosahedron', '6': 'sphere', '7': 'torus', '8': 'voxel3d', '9': 'voxelHello', '0': 'voxelCustom' }
             if (modelKeys[e.key]) {
                 switchModel(modelKeys[e.key])
             }
@@ -806,6 +929,60 @@
                 processOBJModel(rawOBJContent, rawOBJFileName || 'model.obj')
             }
         })
+
+        // Voxel text controls
+        const voxelTextInput = /** @type {HTMLInputElement} */ (document.getElementById('voxelTextInput'))
+        voxelTextInput.addEventListener('input', (e) => {
+            voxelTextSettings.text = e.target.value || 'HELLO'
+        })
+
+        const voxelPixelSizeSlider = /** @type {HTMLInputElement} */ (document.getElementById('voxelPixelSizeSlider'))
+        const voxelPixelSizeValue = document.getElementById('voxelPixelSizeValue')
+        voxelPixelSizeSlider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value)
+            voxelTextSettings.pixelSize = value
+            voxelPixelSizeValue.textContent = value.toFixed(2)
+        })
+
+        const voxelDepthSlider = /** @type {HTMLInputElement} */ (document.getElementById('voxelDepthSlider'))
+        const voxelDepthValue = document.getElementById('voxelDepthValue')
+        voxelDepthSlider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value)
+            voxelTextSettings.depth = value
+            voxelDepthValue.textContent = value.toFixed(2)
+        })
+
+        const voxelLetterSpacingSlider = /** @type {HTMLInputElement} */ (document.getElementById('voxelLetterSpacingSlider'))
+        const voxelLetterSpacingValue = document.getElementById('voxelLetterSpacingValue')
+        voxelLetterSpacingSlider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value)
+            voxelTextSettings.letterSpacing = value
+            voxelLetterSpacingValue.textContent = value.toFixed(2)
+        })
+
+        const voxelLineSpacingSlider = /** @type {HTMLInputElement} */ (document.getElementById('voxelLineSpacingSlider'))
+        const voxelLineSpacingValue = document.getElementById('voxelLineSpacingValue')
+        voxelLineSpacingSlider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value)
+            voxelTextSettings.lineSpacing = value
+            voxelLineSpacingValue.textContent = value.toFixed(2)
+        })
+
+        const updateVoxelTextBtn = document.getElementById('updateVoxelText')
+        updateVoxelTextBtn.addEventListener('click', () => {
+            updateVoxelTextModel()
+        })
+
+        // Allow Enter key to update voxel text
+        voxelTextInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                updateVoxelTextModel()
+            }
+        })
+
+        // Initialize voxel text input value
+        voxelTextInput.value = voxelTextSettings.text
 
         // Initialize info
         updateModelInfo(currentModel, 'torus')

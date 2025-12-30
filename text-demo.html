@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voxel Text Demo</title>
+    <style>
+        body {
+            background: #0a0a0f;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            font-family: 'Courier New', monospace;
+            color: #00ffcc;
+        }
+
+        .container {
+            font-family: 'Courier New', monospace;
+            font-size: 4px;
+            line-height: 5px;
+            letter-spacing: 1px;
+            color: #00ffcc;
+            text-shadow: 0 0 4px #00ffcc44;
+            white-space: pre;
+            border: 1px solid #00ffcc33;
+            padding: 10px;
+            background: rgba(0, 20, 20, 0.3);
+            min-height: 200px;
+            min-width: 300px;
+            display: block;
+        }
+
+        .controls {
+            background: rgba(0, 20, 20, 0.9);
+            border: 1px solid #00ffcc44;
+            border-radius: 8px;
+            padding: 16px;
+            color: #00ffcc;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .controls h3 {
+            margin: 0 0 16px 0;
+            text-shadow: 0 0 8px #00ffcc66;
+        }
+
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 12px;
+            color: #00ffcc99;
+        }
+
+        .input-group textarea {
+            width: 100%;
+            min-height: 100px;
+            background: rgba(0, 20, 20, 0.5);
+            border: 1px solid #00ffcc55;
+            color: #00ffcc;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #00ffcc;
+            box-shadow: 0 0 8px #00ffcc44;
+        }
+
+        .input-group input[type="range"] {
+            width: 100%;
+            margin: 4px 0;
+            background: transparent;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .input-group input[type="range"]::-webkit-slider-runnable-track {
+            height: 4px;
+            background: #00ffcc33;
+            border-radius: 2px;
+        }
+
+        .input-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #00ffcc;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 4px #00ffcc66;
+        }
+
+        .value-display {
+            display: inline-block;
+            margin-left: 8px;
+            font-size: 11px;
+            color: #00ffcc;
+            min-width: 50px;
+        }
+
+        .info {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #00ffcc33;
+            font-size: 11px;
+            color: #00ffcc99;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="controls">
+        <h3>📝 Voxel Text Live Demo</h3>
+        <div class="input-group">
+            <label for="textInput">Type your text (supports English and Russian):</label>
+            <textarea id="textInput"
+                placeholder="Type here...&#10;Supports multiple lines!&#10;English: HELLO&#10;Russian: Привет"></textarea>
+        </div>
+        <div class="input-group">
+            <label>
+                Pixel Size:
+                <span class="value-display" id="pixelSizeValue">0.3</span>
+            </label>
+            <input type="range" id="pixelSizeSlider" min="0.1" max="0.5" step="0.05" value="0.3">
+        </div>
+        <div class="input-group">
+            <label>
+                Depth:
+                <span class="value-display" id="depthValue">0.3</span>
+            </label>
+            <input type="range" id="depthSlider" min="0.1" max="0.5" step="0.05" value="0.3">
+        </div>
+        <div class="input-group">
+            <label>
+                Rotation X:
+                <span class="value-display" id="rotationXValue">0.0</span>
+            </label>
+            <input type="range" id="rotationXSlider" min="-3.14" max="3.14" step="0.1" value="0">
+        </div>
+        <div class="input-group">
+            <label>
+                Rotation Y:
+                <span class="value-display" id="rotationYValue">0.0</span>
+            </label>
+            <input type="range" id="rotationYSlider" min="-3.14" max="3.14" step="0.1" value="0">
+        </div>
+        <div class="input-group">
+            <label>
+                Rotation Z:
+                <span class="value-display" id="rotationZValue">0.0</span>
+            </label>
+            <input type="range" id="rotationZSlider" min="-3.14" max="3.14" step="0.1" value="0">
+        </div>
+        <div class="input-group">
+            <label>
+                View Distance:
+                <span class="value-display" id="viewDistanceValue">2.0</span>
+            </label>
+            <input type="range" id="viewDistanceSlider" min="1.0" max="5.0" step="0.1" value="2.0">
+        </div>
+        <div class="input-group">
+            <label>
+                Scale:
+                <span class="value-display" id="scaleValue">0.5</span>
+            </label>
+            <input type="range" id="scaleSlider" min="0.1" max="2.0" step="0.05" value="0.5">
+        </div>
+        <div class="input-group">
+            <label>
+                Width:
+                <span class="value-display" id="widthValue">220</span>
+            </label>
+            <input type="range" id="widthSlider" min="100" max="400" step="10" value="220">
+        </div>
+        <div class="input-group">
+            <label>
+                Height:
+                <span class="value-display" id="heightValue">140</span>
+            </label>
+            <input type="range" id="heightSlider" min="60" max="300" step="10" value="140">
+        </div>
+        <div class="info" id="modelInfo">
+            Vertices: 0 | Edges: 0
+        </div>
+    </div>
+
+    <div class="container" id="renderContainer" style="cursor: grab; user-select: none;"></div>
+
+    <script type="module">
+        import * as Engine from './engine.js'
+        import * as Models from './models.js'
+
+        const container = /** @type {HTMLDivElement} */ (document.getElementById('renderContainer'))
+        const textInput = /** @type {HTMLTextAreaElement} */ (document.getElementById('textInput'))
+        const pixelSizeSlider = /** @type {HTMLInputElement} */ (document.getElementById('pixelSizeSlider'))
+        const depthSlider = /** @type {HTMLInputElement} */ (document.getElementById('depthSlider'))
+        const rotationXSlider = /** @type {HTMLInputElement} */ (document.getElementById('rotationXSlider'))
+        const rotationYSlider = /** @type {HTMLInputElement} */ (document.getElementById('rotationYSlider'))
+        const rotationZSlider = /** @type {HTMLInputElement} */ (document.getElementById('rotationZSlider'))
+        const viewDistanceSlider = /** @type {HTMLInputElement} */ (document.getElementById('viewDistanceSlider'))
+        const scaleSlider = /** @type {HTMLInputElement} */ (document.getElementById('scaleSlider'))
+        const widthSlider = /** @type {HTMLInputElement} */ (document.getElementById('widthSlider'))
+        const heightSlider = /** @type {HTMLInputElement} */ (document.getElementById('heightSlider'))
+        const pixelSizeValue = document.getElementById('pixelSizeValue')
+        const depthValue = document.getElementById('depthValue')
+        const rotationXValue = document.getElementById('rotationXValue')
+        const rotationYValue = document.getElementById('rotationYValue')
+        const rotationZValue = document.getElementById('rotationZValue')
+        const viewDistanceValue = document.getElementById('viewDistanceValue')
+        const scaleValue = document.getElementById('scaleValue')
+        const widthValue = document.getElementById('widthValue')
+        const heightValue = document.getElementById('heightValue')
+        const modelInfo = document.getElementById('modelInfo')
+
+        if (!container || !textInput) {
+            console.error('Required DOM elements not found!')
+            if (container) container.textContent = 'Error: Missing elements'
+        }
+
+        // Dimensions (will be updated by sliders)
+        let width = 220
+        let height = 140
+        let frameBuffer = Engine.createBuffer(width, height)
+
+        // Settings
+        let settings = {
+            text: 'HELLO\nWORLD',
+            pixelSize: 0.3,
+            depth: 0.3,
+            letterSpacing: 0.25,
+            lineSpacing: 0.35,
+            rotationX: 0,
+            rotationY: 0,
+            rotationZ: 0,
+            viewDistance: 2.0,
+            scale: 0.5
+        }
+
+        // Current model
+        let currentModel = null
+
+        // Mouse drag state for rotation
+        let isDragging = false
+        let lastMouseX = 0
+        let lastMouseY = 0
+
+        // Update model from text
+        const updateModel = () => {
+            try {
+                // Use the text as-is, but ensure we have something to render
+                const textToRender = settings.text.length > 0 ? settings.text : 'HELLO'
+
+                console.log('Updating model with text:', JSON.stringify(textToRender))
+                currentModel = Models.createVoxelText(textToRender, {
+                    pixelSize: settings.pixelSize,
+                    depth: settings.depth,
+                    letterSpacing: settings.letterSpacing,
+                    lineSpacing: settings.lineSpacing
+                })
+
+                if (!currentModel || !currentModel.vertices || currentModel.vertices.length === 0) {
+                    throw new Error('Model creation returned empty model')
+                }
+
+                console.log('Model created:', currentModel.vertices.length, 'vertices,', currentModel.edges.length, 'edges')
+
+                // Debug: Check model bounds
+                if (currentModel.vertices.length > 0) {
+                    const bounds = currentModel.vertices.reduce((acc, v) => ({
+                        minX: Math.min(acc.minX, v.x),
+                        maxX: Math.max(acc.maxX, v.x),
+                        minY: Math.min(acc.minY, v.y),
+                        maxY: Math.max(acc.maxY, v.y),
+                        minZ: Math.min(acc.minZ, v.z),
+                        maxZ: Math.max(acc.maxZ, v.z),
+                    }), { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity, minZ: Infinity, maxZ: -Infinity })
+                    console.log('Model bounds:', bounds)
+                }
+
+                // Update info
+                if (modelInfo) {
+                    modelInfo.textContent = `Vertices: ${currentModel.vertices.length} | Edges: ${currentModel.edges.length}`
+                }
+            } catch (err) {
+                console.error('Failed to create model:', err)
+                if (modelInfo) {
+                    modelInfo.textContent = `Error: ${err.message}`
+                }
+                currentModel = null
+            }
+        }
+
+        // Render function
+        const render = () => {
+            if (!currentModel) {
+                if (container) {
+                    container.textContent = 'No model loaded'
+                }
+                return
+            }
+
+            if (!container) {
+                console.error('Container element not found!')
+                return
+            }
+
+            try {
+                Engine.clearBuffer(frameBuffer)
+
+                // Render with rotation controls - model is centered at origin, so rotation happens around center
+                const transformed = Engine.transformModel(currentModel, {
+                    rx: settings.rotationX,
+                    ry: settings.rotationY,
+                    rz: settings.rotationZ,
+                    tx: 0,  // X position (centered)
+                    ty: 0,  // Y position (centered)
+                    tz: settings.viewDistance,  // Z position (camera distance - controlled by slider)
+                    scale: settings.scale  // Scale controlled by slider
+                })
+
+                Engine.renderModel(frameBuffer, currentModel, transformed, container, { width, height }, {
+                    maxEdges: Infinity,
+                    showVertices: false,  // Show vertices for voxel text (cubes are small)
+                    vertexChar: '█'
+                })
+
+                Engine.flushBuffer(frameBuffer, container)
+            } catch (err) {
+                console.error('Render error:', err)
+                if (container) {
+                    container.textContent = `Render Error: ${err.message}`
+                }
+            }
+        }
+
+        // Continuous render loop (even for static view, ensures updates)
+        const renderLoop = () => {
+            render()
+            requestAnimationFrame(renderLoop)
+        }
+
+        // Text input handler - update immediately
+        const handleTextChange = () => {
+            const newText = textInput.value
+            if (newText !== settings.text) {
+                settings.text = newText
+                console.log('Text changed to:', JSON.stringify(settings.text))
+                updateModel()
+                // Render will happen in the loop, but force immediate update
+                render()
+            }
+        }
+
+        textInput.addEventListener('input', handleTextChange)
+        textInput.addEventListener('keyup', handleTextChange)
+        textInput.addEventListener('paste', () => {
+            setTimeout(handleTextChange, 10)
+        })
+        textInput.addEventListener('change', handleTextChange)
+
+        // Pixel size slider
+        pixelSizeSlider.addEventListener('input', (e) => {
+            const newValue = parseFloat(e.target.value)
+            if (newValue !== settings.pixelSize) {
+                settings.pixelSize = newValue
+                pixelSizeValue.textContent = settings.pixelSize.toFixed(2)
+                updateModel()
+                render()
+            }
+        })
+
+        // Depth slider
+        depthSlider.addEventListener('input', (e) => {
+            const newValue = parseFloat(e.target.value)
+            if (newValue !== settings.depth) {
+                settings.depth = newValue
+                depthValue.textContent = settings.depth.toFixed(2)
+                updateModel()
+                render()
+            }
+        })
+
+        // Rotation X slider
+        rotationXSlider.addEventListener('input', (e) => {
+            const newValue = parseFloat(e.target.value)
+            if (newValue !== settings.rotationX) {
+                settings.rotationX = newValue
+                rotationXValue.textContent = settings.rotationX.toFixed(2)
+                render()
+            }
+        })
+
+        // Rotation Y slider
+        rotationYSlider.addEventListener('input', (e) => {
+            const newValue = parseFloat(e.target.value)
+            if (newValue !== settings.rotationY) {
+                settings.rotationY = newValue
+                rotationYValue.textContent = settings.rotationY.toFixed(2)
+                render()
+            }
+        })
+
+        // Rotation Z slider
+        rotationZSlider.addEventListener('input', (e) => {
+            const newValue = parseFloat(e.target.value)
+            if (newValue !== settings.rotationZ) {
+                settings.rotationZ = newValue
+                rotationZValue.textContent = settings.rotationZ.toFixed(2)
+                render()
+            }
+        })
+
+        // View distance slider
+        viewDistanceSlider.addEventListener('input', (e) => {
+            const newValue = parseFloat(e.target.value)
+            if (newValue !== settings.viewDistance) {
+                settings.viewDistance = newValue
+                viewDistanceValue.textContent = settings.viewDistance.toFixed(2)
+                render()
+            }
+        })
+
+        // Scale slider
+        scaleSlider.addEventListener('input', (e) => {
+            const newValue = parseFloat(e.target.value)
+            if (newValue !== settings.scale) {
+                settings.scale = newValue
+                scaleValue.textContent = settings.scale.toFixed(2)
+                render()
+            }
+        })
+
+        // Width slider
+        widthSlider.addEventListener('input', (e) => {
+            const newValue = parseInt(e.target.value, 10)
+            if (newValue !== width) {
+                width = newValue
+                widthValue.textContent = width.toString()
+                // Recreate buffer with new dimensions
+                frameBuffer = Engine.createBuffer(width, height)
+                render()
+            }
+        })
+
+        // Height slider
+        heightSlider.addEventListener('input', (e) => {
+            const newValue = parseInt(e.target.value, 10)
+            if (newValue !== height) {
+                height = newValue
+                heightValue.textContent = height.toString()
+                // Recreate buffer with new dimensions
+                frameBuffer = Engine.createBuffer(width, height)
+                render()
+            }
+        })
+
+        // Mouse drag controls for rotation
+        const updateRotationFromSliders = () => {
+            // Sync sliders with current settings
+            rotationXSlider.value = settings.rotationX.toString()
+            rotationYSlider.value = settings.rotationY.toString()
+            rotationZSlider.value = settings.rotationZ.toString()
+            rotationXValue.textContent = settings.rotationX.toFixed(2)
+            rotationYValue.textContent = settings.rotationY.toFixed(2)
+            rotationZValue.textContent = settings.rotationZ.toFixed(2)
+        }
+
+        const handleMouseDown = (e) => {
+            if (e.button !== 0) return // Only left mouse button
+            isDragging = true
+            lastMouseX = e.clientX
+            lastMouseY = e.clientY
+            container.style.cursor = 'grabbing'
+            e.preventDefault()
+        }
+
+        const handleMouseMove = (e) => {
+            if (!isDragging) return
+
+            const deltaX = e.clientX - lastMouseX
+            const deltaY = e.clientY - lastMouseY
+
+            // Convert mouse movement to rotation
+            // Horizontal movement rotates around Y-axis (yaw)
+            // Vertical movement rotates around X-axis (pitch)
+            const rotationSpeed = 0.01
+            settings.rotationY -= deltaX * rotationSpeed  // Inverted: drag right = rotate left
+            settings.rotationX -= deltaY * rotationSpeed  // Inverted: drag down = rotate down
+
+            // Keep rotations in reasonable range (optional, can wrap)
+            settings.rotationX = Math.max(-Math.PI, Math.min(Math.PI, settings.rotationX))
+            settings.rotationY = Math.max(-Math.PI, Math.min(Math.PI, settings.rotationY))
+
+            // Update sliders and values
+            updateRotationFromSliders()
+            render()
+
+            lastMouseX = e.clientX
+            lastMouseY = e.clientY
+            e.preventDefault()
+        }
+
+        const handleMouseUp = (e) => {
+            if (e.button !== 0) return
+            isDragging = false
+            container.style.cursor = 'grab'
+            e.preventDefault()
+        }
+
+        // Add mouse event listeners to container
+        container.addEventListener('mousedown', handleMouseDown)
+        document.addEventListener('mousemove', handleMouseMove)
+        document.addEventListener('mouseup', handleMouseUp)
+
+        // Also handle mouse leave to stop dragging if mouse leaves window
+        container.addEventListener('mouseleave', () => {
+            if (isDragging) {
+                isDragging = false
+                container.style.cursor = 'grab'
+            }
+        })
+
+        // Mouse wheel for zoom (scale)
+        const handleWheel = (e) => {
+            e.preventDefault()
+
+            // Adjust scale based on wheel delta
+            // Negative deltaY = scroll up = zoom in (increase scale)
+            // Positive deltaY = scroll down = zoom out (decrease scale)
+            const zoomSpeed = 0.05
+            const delta = e.deltaY > 0 ? -zoomSpeed : zoomSpeed
+
+            // Update scale (clamp to slider range)
+            const newScale = Math.max(0.1, Math.min(2.0, settings.scale + delta))
+
+            if (newScale !== settings.scale) {
+                settings.scale = newScale
+                scaleValue.textContent = settings.scale.toFixed(2)
+                scaleSlider.value = settings.scale.toString()
+                render()
+            }
+        }
+
+        container.addEventListener('wheel', handleWheel, { passive: false })
+
+        // Initialize
+        textInput.value = settings.text
+        console.log('Initializing demo...')
+        console.log('Container found:', !!container)
+        console.log('Frame buffer created:', !!frameBuffer)
+
+        // Test with a simple cube first to verify rendering works
+        console.log('Testing with simple cube...')
+        const testCube = Models.createCube(0.3)
+        const testTransformed = Engine.transformModel(testCube, {
+            rx: 0, ry: 0, rz: 0, tz: 2, scale: 1
+        })
+        Engine.clearBuffer(frameBuffer)
+        Engine.renderModel(frameBuffer, testCube, testTransformed, container, { width, height }, {
+            maxEdges: Infinity,
+            showVertices: true
+        })
+        Engine.flushBuffer(frameBuffer, container)
+        console.log('Test cube rendered. If you see a cube, rendering works.')
+
+        // Now load the actual text model
+        updateModel()
+
+        // Start render loop
+        renderLoop()
+        console.log('Render loop started')
+    </script>
+</body>
+
+</html>
